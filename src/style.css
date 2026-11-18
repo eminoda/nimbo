@@ -64,12 +64,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .titlebar-controls .close-control:hover { background: #c9424b; }
 
 .workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 54px minmax(0, 1fr); }
-.project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
-.brand-mark, .dock-action, .icon-button { display: grid; place-items: center; padding: 0; border: 0; color: #9eabbc; background: transparent; cursor: pointer; }
-.brand-mark { width: 34px; height: 34px; margin-bottom: 9px; color: #a9b7c9; }
-.dock-logo { width: 25px; height: 25px; object-fit: contain; }
-.brand-mark:hover, .dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
-.dock-divider { width: 34px; height: 1px; margin: 6px 0 12px; background: #3a424f; }
+.project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 14px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
+.dock-action, .icon-button { display: grid; place-items: center; padding: 0; border: 0; color: #9eabbc; background: transparent; cursor: pointer; }
+.dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
 .project-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; scrollbar-width: none; }
 .project-list::-webkit-scrollbar { display: none; }
 .project-tile { position: relative; width: 36px; height: 36px; flex: 0 0 36px; border: 0; border-radius: 10px; color: #f4f6fb; background: hsl(var(--tile-hue) 38% 59%); font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: -.04em; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
