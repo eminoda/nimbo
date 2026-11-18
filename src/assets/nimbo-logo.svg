@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nimbo-cloud" x1="8" y1="8" x2="56" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#79F2D0"/>
+      <stop offset=".58" stop-color="#27CBB7"/>
+      <stop offset="1" stop-color="#6388F5"/>
+    </linearGradient>
+    <linearGradient id="nimbo-terminal" x1="15" y1="26" x2="54" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78EED0"/>
+      <stop offset="1" stop-color="#7788F4"/>
+    </linearGradient>
+  </defs>
+  <path d="M19.5 44H15c-7.2 0-12-4.8-12-11.2 0-6.2 4.7-10.8 11.2-11.1C16.8 12.7 22.7 8 29.7 8c8.2 0 14.8 6.3 15.4 14.5 7 .4 11.9 5.1 11.9 11.1 0 4.1-2.2 7.8-6 9.6" stroke="url(#nimbo-cloud)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="13" y="26" width="42" height="32" rx="9" fill="#18212C" stroke="url(#nimbo-terminal)" stroke-width="3"/>
+  <circle cx="21" cy="33" r="1.5" fill="#F0787E"/>
+  <circle cx="26" cy="33" r="1.5" fill="#F1C65E"/>
+  <circle cx="31" cy="33" r="1.5" fill="#61D6A8"/>
+  <path d="m23 40 5 4-5 4m10 0h8" stroke="#EAF3FF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

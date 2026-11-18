@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { FolderPlus, Settings2, TerminalSquare } from '@lucide/vue'
+import { FolderPlus, Settings2 } from '@lucide/vue'
+import nimboLogo from '../assets/nimbo-logo.svg'
 import type { ProjectBookmark } from '@/types/project'
 
 defineProps<{ projects: ProjectBookmark[]; selectedProjectId?: string; runningProjectIds: string[] }>()
@@ -13,7 +14,7 @@ const emit = defineEmits<{
 <template>
   <aside class="project-dock" aria-label="项目栏">
     <button class="brand-mark" type="button" aria-label="Nimbo Terminal" title="Nimbo Terminal">
-      <TerminalSquare :size="18" />
+      <img class="dock-logo" :src="nimboLogo" alt="" aria-hidden="true" />
     </button>
     <div class="dock-divider" />
     <nav class="project-list" aria-label="项目">

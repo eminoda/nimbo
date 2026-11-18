@@ -54,6 +54,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .titlebar-brand { display: flex; align-items: center; gap: 9px; }
 .brand-icon { color: #88adff; display: flex; }
+.brand-logo { width: 23px; height: 23px; object-fit: contain; }
 .titlebar-brand strong { font-size: 15px; letter-spacing: -.025em; font-weight: 700; }
 .titlebar-separator { color: #566172; font-size: 20px; margin-left: 1px; }
 .titlebar-section { color: var(--muted); font-size: 13px; }
@@ -66,6 +67,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
 .brand-mark, .dock-action, .icon-button { display: grid; place-items: center; padding: 0; border: 0; color: #9eabbc; background: transparent; cursor: pointer; }
 .brand-mark { width: 34px; height: 34px; margin-bottom: 9px; color: #a9b7c9; }
+.dock-logo { width: 25px; height: 25px; object-fit: contain; }
 .brand-mark:hover, .dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
 .dock-divider { width: 34px; height: 1px; margin: 6px 0 12px; background: #3a424f; }
 .project-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; scrollbar-width: none; }
@@ -109,6 +111,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .command-toolbar { min-width: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 8px; background: #191e25; border-bottom: 1px solid #202630; }
 .toolbar-buttons { display: flex; align-items: center; gap: 6px; }
 .toolbar-button { height: 30px; min-width: 66px; padding-block: 0; padding-inline: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #424b58; border-radius: 16px; color: #ccd3de; background: transparent; font-size: 11px; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.action-icon-start { color: #63d6a8; }
+.action-icon-stop { color: #ef858c; }
+.action-icon-reload { color: #8eb7ff; }
 .toolbar-button:hover:not(:disabled) { color: white; border-color: #7a8798; background: #2a313c; }
 .toolbar-button.start-button { border-color: transparent; background: #282f38; }
 .toolbar-button.start-button:hover:not(:disabled) { border-color: transparent; background: #343e49; }
@@ -188,11 +193,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .setting-row strong, .about-card strong { color: #dbe3ed; font-size: 13px; }
 .setting-row small, .about-card small { color: #8d9aae; font-size: 11px; line-height: 1.45; }
 .setting-row input { width: 16px; height: 16px; flex: 0 0 16px; }
+.config-file-button { width: 100%; justify-content: flex-start; margin-top: 16px; }
 .about-card { margin-top: 19px; display: flex; align-items: center; gap: 13px; }
 .about-card > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; }
 .about-logo { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 11px; color: white; background: #718fe2; font-size: 15px; font-weight: 700; }
-.version-tag { margin-left: auto; padding: 4px 8px; border: 1px solid #3c4756; border-radius: 12px; color: #9aa8bb; font-size: 10px; }
-
 .toast-message { position: fixed; z-index: 30; right: 25px; bottom: 26px; max-width: min(440px, 75vw); padding: 12px 15px; border: 1px solid #4a5667; border-radius: 10px; color: #e7edf5; background: #2a323d; box-shadow: 0 10px 30px #0005; font-size: 13px; }
 .toast-enter-active, .toast-leave-active { transition: opacity .18s ease, transform .18s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(8px); }

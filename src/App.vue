@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { openPath } from '@tauri-apps/plugin-opener'
 import { Minus, Square, X, Command, PanelLeftClose } from '@lucide/vue'
+import nimboLogo from './assets/nimbo-logo.svg'
 import CommandEditor from '@/components/CommandEditor.vue'
 import CommandTabs from '@/components/CommandTabs.vue'
 import CommandToolbar from '@/components/CommandToolbar.vue'
@@ -12,6 +14,7 @@ import SettingsPanel from '@/components/SettingsPanel.vue'
 import TerminalPane from '@/components/TerminalPane.vue'
 import { useProjectsStore } from '@/stores/projects'
 import { useSessionsStore } from '@/stores/sessions'
+import { nimboApi } from '@/services/tauri'
 import type { CommandPreset, ProjectBookmark } from '@/types/project'
 import type { SessionStatus } from '@/types/session'
 
@@ -154,12 +157,18 @@ async function selectProject(id: string) {
 async function minimizeWindow() { await run(() => getCurrentWindow().minimize()) }
 async function toggleWindowSize() { await run(() => getCurrentWindow().toggleMaximize()) }
 async function closeWindow() { await run(() => getCurrentWindow().close()) }
+async function openSettingsFile() {
+  await run(async () => {
+    const path = await nimboApi.settingsFilePath()
+    await openPath(path)
+  })
+}
 </script>
 
 <template>
   <main class="app-frame">
     <header class="titlebar" data-tauri-drag-region @dblclick="toggleWindowSize">
-      <div class="titlebar-brand" data-tauri-drag-region><span class="brand-icon"><Command :size="18" /></span><strong>Nimbo Terminal</strong><span class="titlebar-separator">/</span><span class="titlebar-section">Workspace</span></div>
+      <div class="titlebar-brand" data-tauri-drag-region><span class="brand-icon"><img class="brand-logo" :src="nimboLogo" alt="" aria-hidden="true" /></span><strong>Nimbo Terminal</strong><span class="titlebar-separator">/</span><span class="titlebar-section">Workspace</span></div>
       <div class="titlebar-controls">
         <button type="button" title="最小化" aria-label="最小化" @mousedown.stop @click="minimizeWindow"><Minus :size="17" /></button>
         <button type="button" title="最大化 / 还原" aria-label="最大化或还原" @mousedown.stop @click="toggleWindowSize"><Square :size="16" /></button>
@@ -222,6 +231,6 @@ async function closeWindow() { await run(() => getCurrentWindow().close()) }
     <Transition name="toast"><div v-if="toast" class="toast-message" role="status">{{ toast }}</div></Transition>
     <ProjectEditor v-if="projectDialogOpen" :project="editingProject" @save="saveProject" @cancel="projectDialogOpen = false" />
     <CommandEditor v-if="commandDialogOpen && project" :command="editingCommand" :project-id="project.id" :project-path="project.path" @save="saveCommand" @cancel="commandDialogOpen = false" />
-    <SettingsPanel v-if="settingsOpen" :close-to-tray="projectsStore.settings.closeToTray" @close="settingsOpen = false" @update-close-to-tray="(value) => run(() => projectsStore.setCloseToTray(value))" />
+    <SettingsPanel v-if="settingsOpen" :close-to-tray="projectsStore.settings.closeToTray" @close="settingsOpen = false" @open-config="openSettingsFile" @update-close-to-tray="(value) => run(() => projectsStore.setCloseToTray(value))" />
   </main>
 </template>

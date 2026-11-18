@@ -2,7 +2,7 @@ use crate::models::NimboSettings;
 use std::{fs, io::Write, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
-fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
         .app_data_dir()

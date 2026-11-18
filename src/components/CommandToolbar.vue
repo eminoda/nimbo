@@ -10,15 +10,15 @@ const emit = defineEmits<{ start: []; stop: []; reload: []; clear: [] }>()
   <div class="command-toolbar">
     <div class="toolbar-buttons">
       <button class="toolbar-button start-button" type="button" :disabled="status === 'running' || status === 'starting' || status === 'stopping' || !commandName" @click="emit('start')">
-        <CirclePlay :size="16" />
+        <CirclePlay class="action-icon-start" :size="16" />
         <span>启动</span>
       </button>
       <button class="toolbar-button" type="button" :disabled="status !== 'running' && status !== 'starting'" @click="emit('stop')">
-        <Square :size="15" />
+        <Square class="action-icon-stop" :size="15" />
         <span>停止</span>
       </button>
       <button class="toolbar-button" type="button" :disabled="!commandName || status === 'starting' || status === 'stopping'" @click="emit('reload')">
-        <RotateCw :size="16" />
+        <RotateCw class="action-icon-reload" :size="16" />
         <span>Reload</span>
       </button>
       <button class="icon-button clear-logs" type="button" title="清空日志" aria-label="清空日志" @click="emit('clear')">

@@ -4,6 +4,7 @@ import type { TerminalSession } from '@/types/session'
 
 export const nimboApi = {
   loadSettings: () => invoke<NimboSettings>('load_settings'),
+  settingsFilePath: () => invoke<string>('settings_file_path'),
   listPackageScripts: (projectId: string) =>
     invoke<PackageScripts>('list_package_scripts', { projectId }),
   saveProject: (project: ProjectBookmark) => invoke<void>('save_project', { project }),

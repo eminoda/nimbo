@@ -66,6 +66,16 @@ pub fn load_settings(state: State<'_, AppState>) -> Result<NimboSettings, String
 }
 
 #[tauri::command]
+pub fn settings_file_path(app: AppHandle, state: State<'_, AppState>) -> Result<String, String> {
+    let path = storage::settings_path(&app)?;
+    if !path.exists() {
+        let settings = state.settings.lock().map_err(|_| "配置不可用")?.clone();
+        storage::save(&app, &settings)?;
+    }
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 pub fn list_package_scripts(
     state: State<'_, AppState>,
     project_id: String,

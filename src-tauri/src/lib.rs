@@ -49,6 +49,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::load_settings,
+            commands::settings_file_path,
             commands::list_package_scripts,
             commands::save_project,
             commands::delete_project,
