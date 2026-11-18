@@ -25,6 +25,7 @@ const editingProject = shallowRef<ProjectBookmark>()
 const commandDialogOpen = shallowRef(false)
 const editingCommand = shallowRef<CommandPreset>()
 const settingsOpen = shallowRef(false)
+const settingsFilePath = shallowRef('')
 const toast = shallowRef('')
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -157,9 +158,14 @@ async function selectProject(id: string) {
 async function minimizeWindow() { await run(() => getCurrentWindow().minimize()) }
 async function toggleWindowSize() { await run(() => getCurrentWindow().toggleMaximize()) }
 async function closeWindow() { await run(() => getCurrentWindow().close()) }
+async function openSettingsPanel() {
+  settingsOpen.value = true
+  await run(async () => { settingsFilePath.value = await nimboApi.settingsFilePath() })
+}
 async function openSettingsFile() {
   await run(async () => {
-    const path = await nimboApi.settingsFilePath()
+    const path = settingsFilePath.value || await nimboApi.settingsFilePath()
+    settingsFilePath.value = path
     await openPath(path)
   })
 }
@@ -183,7 +189,7 @@ async function openSettingsFile() {
         :running-project-ids="runningProjectIds"
         @select="selectProject"
         @add-project="openProjectEditor()"
-        @open-settings="settingsOpen = true"
+        @open-settings="openSettingsPanel"
       />
 
       <section v-if="project" class="project-workspace">
@@ -231,6 +237,6 @@ async function openSettingsFile() {
     <Transition name="toast"><div v-if="toast" class="toast-message" role="status">{{ toast }}</div></Transition>
     <ProjectEditor v-if="projectDialogOpen" :project="editingProject" @save="saveProject" @cancel="projectDialogOpen = false" />
     <CommandEditor v-if="commandDialogOpen && project" :command="editingCommand" :project-id="project.id" :project-path="project.path" @save="saveCommand" @cancel="commandDialogOpen = false" />
-    <SettingsPanel v-if="settingsOpen" :close-to-tray="projectsStore.settings.closeToTray" @close="settingsOpen = false" @open-config="openSettingsFile" @update-close-to-tray="(value) => run(() => projectsStore.setCloseToTray(value))" />
+    <SettingsPanel v-if="settingsOpen" :close-to-tray="projectsStore.settings.closeToTray" :config-path="settingsFilePath" @close="settingsOpen = false" @open-config="openSettingsFile" @update-close-to-tray="(value) => run(() => projectsStore.setCloseToTray(value))" />
   </main>
 </template>

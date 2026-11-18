@@ -190,13 +190,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 15px 0 20px; border-bottom: 1px solid #343e4b; cursor: pointer; }
 .setting-row span { display: flex; flex-direction: column; gap: 6px; }
-.setting-row strong, .about-card strong { color: #dbe3ed; font-size: 13px; }
-.setting-row small, .about-card small { color: #8d9aae; font-size: 11px; line-height: 1.45; }
+.setting-row strong { color: #dbe3ed; font-size: 13px; }
+.setting-row small { color: #8d9aae; font-size: 11px; line-height: 1.45; }
 .setting-row input { width: 16px; height: 16px; flex: 0 0 16px; }
-.config-file-button { width: 100%; justify-content: flex-start; margin-top: 16px; }
-.about-card { margin-top: 19px; display: flex; align-items: center; gap: 13px; }
-.about-card > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; }
-.about-logo { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 11px; color: white; background: #718fe2; font-size: 15px; font-weight: 700; }
+.config-file-button { width: 100%; min-width: 0; justify-content: flex-start; margin-top: 16px; overflow: hidden; }
+.config-file-button code { overflow: hidden; color: #9bb6dd; font-family: 'Cascadia Mono', Consolas, monospace; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .toast-message { position: fixed; z-index: 30; right: 25px; bottom: 26px; max-width: min(440px, 75vw); padding: 12px 15px; border: 1px solid #4a5667; border-radius: 10px; color: #e7edf5; background: #2a323d; box-shadow: 0 10px 30px #0005; font-size: 13px; }
 .toast-enter-active, .toast-leave-active { transition: opacity .18s ease, transform .18s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(8px); }
