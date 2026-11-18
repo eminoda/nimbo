@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowRef, toRaw, watch } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openPath } from '@tauri-apps/plugin-opener'
 import { Minus, Square, X, Command, PanelLeftClose } from '@lucide/vue'
@@ -73,7 +73,7 @@ onBeforeUnmount(() => {
 })
 
 function openProjectEditor(target?: ProjectBookmark) {
-  editingProject.value = target ? structuredClone(target) : undefined
+  editingProject.value = target ? structuredClone(toRaw(target)) : undefined
   projectDialogOpen.value = true
 }
 
@@ -85,17 +85,29 @@ async function saveProject(value: ProjectBookmark) {
   })
 }
 
-async function removeProject() {
-  if (!project.value || !window.confirm(`删除“${project.value.name}”书签？本地文件夹不会被删除。`)) return
-  const id = project.value.id
+function openProjectById(projectId: string) {
+  const target = projectsStore.projects.find((item) => item.id === projectId)
+  if (target) openProjectEditor(target)
+}
+
+async function removeProject(projectId: string) {
+  const target = projectsStore.projects.find((item) => item.id === projectId)
+  if (!target) return
+  if (sessionsStore.sessions.some((item) =>
+    item.projectId === projectId && ['running', 'starting', 'stopping'].includes(item.status),
+  )) {
+    showToast('请先停止此项目中的运行命令，再删除项目。')
+    return
+  }
+  if (!window.confirm('删除“' + target.name + '”书签？本地文件夹不会被删除。')) return
   await run(async () => {
-    await projectsStore.deleteProject(id)
-    sessionsStore.forgetProject(id)
+    await projectsStore.deleteProject(projectId)
+    sessionsStore.forgetProject(projectId)
   })
 }
 
 function openCommandEditor(target?: CommandPreset) {
-  editingCommand.value = target ? structuredClone(target) : undefined
+  editingCommand.value = target ? structuredClone(toRaw(target)) : undefined
   commandDialogOpen.value = true
 }
 
@@ -188,6 +200,8 @@ async function openSettingsFile() {
         :selected-project-id="project?.id"
         :running-project-ids="runningProjectIds"
         @select="selectProject"
+        @edit-project="openProjectById"
+        @delete-project="removeProject"
         @add-project="openProjectEditor()"
         @open-settings="openSettingsPanel"
       />
@@ -203,7 +217,7 @@ async function openSettingsFile() {
             @edit="openCommandEditor(command)"
             @remove="removeCommand"
           />
-          <ProjectHeader @edit="openProjectEditor(project)" @delete="removeProject" />
+          <ProjectHeader @edit="openProjectEditor(project)" @delete="removeProject(project.id)" />
         </div>
         <CommandToolbar
           :status="status"

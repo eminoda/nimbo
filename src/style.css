@@ -76,6 +76,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-tile:hover { transform: translateY(-1px); box-shadow: 0 6px 18px #0003; }
 .project-tile.active { box-shadow: 0 0 0 3px #343d49; }
 .project-dot { position: absolute; right: -3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 2px #20252e; }
+.project-context-menu { position: fixed; z-index: 40; width: 156px; padding: 5px; border: 1px solid #3b4655; border-radius: 9px; background: #252c36; box-shadow: 0 12px 28px #0008; }
+.project-context-menu button { width: 100%; height: 34px; display: flex; align-items: center; gap: 9px; padding: 0 9px; border: 0; border-radius: 6px; color: #cbd5e2; background: transparent; font-size: 12px; text-align: left; cursor: pointer; }
+.project-context-menu button:hover, .project-context-menu button:focus-visible { color: #fff; background: #343d49; outline: none; }
+.project-context-menu button.danger { color: #f08d94; }
+.project-context-menu button.danger:hover, .project-context-menu button.danger:focus-visible { color: #ffabb0; background: #4a3037; }
 .dock-spacer { flex: 1; min-height: 20px; }
 .dock-action { width: 36px; height: 36px; }
 
