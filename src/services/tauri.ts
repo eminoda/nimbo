@@ -1,0 +1,21 @@
+import { invoke } from '@tauri-apps/api/core'
+import type { NimboSettings, PackageScripts, ProjectBookmark } from '@/types/project'
+import type { TerminalSession } from '@/types/session'
+
+export const nimboApi = {
+  loadSettings: () => invoke<NimboSettings>('load_settings'),
+  listPackageScripts: (projectId: string) =>
+    invoke<PackageScripts>('list_package_scripts', { projectId }),
+  saveProject: (project: ProjectBookmark) => invoke<void>('save_project', { project }),
+  deleteProject: (projectId: string) => invoke<void>('delete_project', { projectId }),
+  selectProject: (projectId: string) => invoke<void>('select_project', { projectId }),
+  selectCommand: (projectId: string, commandId: string) =>
+    invoke<void>('select_command', { projectId, commandId }),
+  setCloseToTray: (enabled: boolean) => invoke<void>('set_close_to_tray', { enabled }),
+  listSessions: () => invoke<TerminalSession[]>('list_sessions'),
+  startCommand: (projectId: string, commandId: string) =>
+    invoke<TerminalSession>('start_command', { projectId, commandId }),
+  stopSession: (sessionId: string) => invoke<void>('stop_session', { sessionId }),
+  reloadSession: (sessionId: string) =>
+    invoke<TerminalSession>('reload_session', { sessionId }),
+}
