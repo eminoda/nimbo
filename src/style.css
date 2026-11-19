@@ -86,11 +86,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .command-tabs-row { min-width: 0; display: flex; align-items: stretch; border-bottom: 1px solid #252c36; }
 .project-header { flex: 0 0 40px; display: flex; align-items: center; justify-content: center; }
 .project-menu { position: relative; display: flex; align-items: center; }
-.project-menu .icon-button { width: 32px; height: 32px; }
+.project-menu { gap: 2px; }
+.project-menu .icon-button { width: 30px; height: 30px; border-radius: 7px; }
+.project-menu .delete-project-button:hover { color: var(--danger); background: #3b2d34; }
 .text-button { border: 0; background: transparent; cursor: pointer; }
-.danger-text { color: var(--danger); font-size: 12px; }
-.project-menu .danger-text { position: absolute; z-index: 3; top: calc(100% + 3px); right: 0; display: none; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #252c36; white-space: nowrap; }
-.project-menu:hover .danger-text, .project-menu:focus-within .danger-text { display: block; }
 
 .command-tabs { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; }
 .tab-strip { height: 100%; min-width: 0; display: flex; align-items: center; gap: 7px; overflow-x: auto; scrollbar-width: thin; }
