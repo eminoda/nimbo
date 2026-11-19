@@ -17,8 +17,9 @@
 - Modify `src-tauri/src/commands.rs`: resolve saved project paths, list branch state, and safely switch a local branch.
 - Modify `src/services/tauri.ts`: add typed `listProjectBranches` and `switchProjectBranch` wrappers.
 - Create `src/components/BranchSwitcher.vue`: branch button, searchable local branch popover, refresh, busy guard, and accessible feedback.
-- Modify `src/App.vue`: pass project ID and active-project status, and mount the selector beside command tabs.
+- Modify `src/App.vue`: pass project ID and active-project status, mount the selector beside command tabs, and remove redundant project edit/delete buttons from the command bar.
 - Modify `src/style.css`: compact branch control and popover styles matching the current dark theme.
+- Delete `src/components/ProjectHeader.vue`: project edit/delete actions remain available from the sidebar context menu.
 - Modify `todo.md`: record the branch selector feature after implementation and build verification.
 
 ## Task 1: Implement the Rust Git adapter
@@ -66,10 +67,10 @@
 
 **Files:** Modify `src/App.vue`; modify `src/style.css`.
 
-- [x] Mount `BranchSwitcher` between `CommandTabs` and `ProjectHeader` in `.command-tabs-row`, passing `project.id` and `runningProjectIds.includes(project.id)`.
+- [x] Mount `BranchSwitcher` after `CommandTabs` in `.command-tabs-row`, passing `project.id` and `runningProjectIds.includes(project.id)`; remove the redundant project edit/delete buttons from this command bar.
 - [x] Ensure project-keyed remounting refreshes state when a different project is selected.
 - [x] Style the trigger and popover to match existing compact dark controls, constrain popup height, keep it above terminal content, and preserve horizontal command-tab scrolling at narrow window widths.
-- [x] Keep project edit/delete actions visible and do not change command or session behavior.
+- [x] Keep project edit/delete in the sidebar context menu and do not change command or session behavior.
 
 ## Task 6: Update tracking and verify
 

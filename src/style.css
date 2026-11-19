@@ -84,12 +84,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .project-workspace { min-width: 0; min-height: 0; height: 100%; display: grid; grid-template-rows: 40px 44px minmax(0, 1fr); background: #1e232c; }
 .command-tabs-row { min-width: 0; display: flex; align-items: stretch; border-bottom: 1px solid #252c36; }
-.project-header { flex: 0 0 40px; display: flex; align-items: center; justify-content: center; }
-.project-menu { position: relative; display: flex; align-items: center; }
-.project-menu { gap: 2px; }
-.project-menu .icon-button { width: 30px; height: 30px; border-radius: 7px; }
-.project-menu .delete-project-button:hover { color: var(--danger); background: #3b2d34; }
-.text-button { border: 0; background: transparent; cursor: pointer; }
 
 .command-tabs { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; }
 .tab-strip { height: 100%; min-width: 0; display: flex; align-items: center; gap: 7px; overflow-x: auto; scrollbar-width: thin; }
@@ -236,7 +230,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 @media (max-width: 800px) {
   .workspace { grid-template-columns: 50px minmax(0, 1fr); }
   .project-dock { padding-inline: 3px; }
-  .project-header { padding-inline: 14px; }
   .command-tabs { padding-right: 10px; }
   .tab-edit { display: none; }
   .toolbar-button { min-width: 65px; padding-inline: 8px; }
