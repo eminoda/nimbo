@@ -15,6 +15,7 @@ export interface ProjectBookmark {
   name: string
   path: string
   iconPath?: string
+  iconDataUrl?: string
   initials?: string
   commands: CommandPreset[]
 }

@@ -70,7 +70,8 @@ onBeforeUnmount(() => {
         @click="emit('select', project.id)"
         @contextmenu.prevent.stop="openContextMenu($event, project.id)"
       >
-        {{ project.initials || project.name.slice(0, 2).toUpperCase() }}
+        <img v-if="project.iconDataUrl" class="project-tile-image" :src="project.iconDataUrl" alt="" />
+        <span v-else>{{ project.initials || project.name.slice(0, 2).toUpperCase() }}</span>
         <span v-if="runningProjectIds.includes(project.id)" class="project-dot" />
       </button>
     </nav>
