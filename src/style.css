@@ -110,6 +110,32 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .icon-button:disabled { color: #536071; cursor: not-allowed; }
 .add-command { margin-left: 3px; width: 34px; height: 34px; }
 
+.branch-switcher { position: relative; z-index: 8; flex: 0 0 auto; align-self: center; margin-right: 2px; }
+.branch-trigger { max-width: 150px; height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid #394351; border-radius: 7px; color: #aebbd0; background: #20262f; font-size: 11px; cursor: pointer; }
+.branch-trigger:hover, .branch-trigger[aria-expanded="true"] { color: #dce7fa; border-color: #596a82; background: #29313c; }
+.branch-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branch-popover { position: absolute; z-index: 25; top: calc(100% + 6px); right: 0; width: 264px; max-height: min(360px, 70vh); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #3b4655; border-radius: 10px; background: #222933; box-shadow: 0 14px 36px #0009; }
+.branch-popover-heading { min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 11px 12px 10px; border-bottom: 1px solid #343e4a; }
+.branch-current-label { display: flex; align-items: center; gap: 6px; color: #8f9daf; font-size: 10px; }
+.branch-popover-heading strong { overflow: hidden; color: #e1e7ef; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.branch-search { height: 32px; flex: 0 0 32px; display: flex; align-items: center; gap: 7px; margin: 9px 10px 7px; padding: 0 8px; border: 1px solid #3b4655; border-radius: 6px; color: #8291a6; background: #171c23; }
+.branch-search input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; color: #dbe3ed; background: transparent; font-size: 11px; }
+.branch-search input::placeholder { color: #718096; }
+.branch-list { min-height: 0; overflow-y: auto; padding: 0 5px 5px; }
+.branch-option { width: 100%; min-height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 5px; color: #bdc8d7; background: transparent; font-size: 11px; text-align: left; cursor: pointer; }
+.branch-option:hover:not(:disabled), .branch-option:focus-visible:not(:disabled) { color: #e5ecf6; background: #303946; outline: none; }
+.branch-option.current { color: #91b5ff; }
+.branch-option:disabled { cursor: default; }
+.branch-option-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branch-option-hint { color: #7f8da1; font-size: 10px; }
+.branch-empty, .branch-error, .branch-notice { margin: 4px 12px 10px; color: #8391a5; font-size: 11px; line-height: 1.5; }
+.branch-error { color: #ff9ca4; overflow-wrap: anywhere; }
+.branch-notice { color: #efc981; }
+.branch-popover-footer { display: flex; align-items: center; justify-content: space-between; padding: 7px 11px; border-top: 1px solid #343e4a; color: #738197; font-size: 10px; }
+.branch-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 3px 5px; border: 0; border-radius: 5px; color: #9ab7e7; background: transparent; font-size: 10px; cursor: pointer; }
+.branch-refresh:hover:not(:disabled) { color: #d7e5fb; background: #303946; }
+.branch-refresh:disabled { opacity: .55; cursor: wait; }
+
 .command-toolbar { min-width: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 8px; background: #191e25; border-bottom: 1px solid #202630; }
 .toolbar-buttons { display: flex; align-items: center; gap: 6px; }
 .toolbar-button { height: 30px; min-width: 66px; padding-block: 0; padding-inline: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #424b58; border-radius: 16px; color: #ccd3de; background: transparent; font-size: 11px; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }

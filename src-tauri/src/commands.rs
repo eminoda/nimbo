@@ -1,4 +1,5 @@
 use crate::{
+    git::{self, GitBranchInfo},
     models::{
         NimboSettings, PackageScript, PackageScripts, ProjectBookmark, SessionStatus,
         TerminalSession,
@@ -6,6 +7,7 @@ use crate::{
     process::{self, AppState},
     storage,
 };
+use std::path::PathBuf;
 use tauri::{AppHandle, State};
 
 fn package_manager(
@@ -124,6 +126,59 @@ pub fn list_package_scripts(
         package_manager: manager.to_string(),
         scripts,
     })
+}
+
+fn project_path(state: &AppState, project_id: &str) -> Result<PathBuf, String> {
+    let settings = state.settings.lock().map_err(|_| "配置不可用")?;
+    settings
+        .projects
+        .iter()
+        .find(|project| project.id == project_id)
+        .map(|project| PathBuf::from(&project.path))
+        .ok_or_else(|| "项目不存在".to_string())
+}
+
+#[tauri::command]
+pub fn list_project_branches(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<GitBranchInfo, String> {
+    let path = project_path(&state, &project_id)?;
+    git::branch_info(&path)
+}
+
+#[tauri::command]
+pub fn switch_project_branch(
+    state: State<'_, AppState>,
+    project_id: String,
+    branch_name: String,
+) -> Result<GitBranchInfo, String> {
+    if branch_name.trim().is_empty() {
+        return Err("请选择一个分支".into());
+    }
+
+    let sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
+    if sessions.values().any(|managed| {
+        managed.session.project_id == project_id
+            && matches!(
+                managed.session.status,
+                SessionStatus::Starting | SessionStatus::Running | SessionStatus::Stopping
+            )
+    }) {
+        return Err("请先停止此项目中的运行命令，再切换分支。".into());
+    }
+
+    let path = project_path(&state, &project_id)?;
+    let current = git::branch_info(&path)?;
+    if !current
+        .local_branches
+        .iter()
+        .any(|branch| branch == &branch_name)
+    {
+        return Err(format!("本地分支不存在：{branch_name}"));
+    }
+    git::switch_branch(&path, &branch_name)?;
+    git::branch_info(&path)
 }
 
 #[tauri::command]
