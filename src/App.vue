@@ -28,6 +28,7 @@ const restoreGeometry = shallowRef<{
   position: PhysicalPosition
   maximized: boolean
   alwaysOnTop: boolean
+  resizable: boolean
 }>()
 const editingProject = shallowRef<ProjectBookmark>()
 const commandDialogOpen = shallowRef(false)
@@ -38,9 +39,6 @@ const toast = shallowRef('')
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const project = computed(() => projectsStore.selectedProject)
-const selectedProjectIndex = computed(() => projectsStore.projects.findIndex((item) => item.id === project.value?.id))
-const selectedProjectColor = computed(() => project.value?.iconColor
-  || `hsl(${(Math.max(0, selectedProjectIndex.value) * 51 + 218) % 360} 38% 59%)`)
 const command = computed(() => project.value?.commands.find((item) => item.id === projectsStore.selectedCommandId)
   ?? project.value?.commands[0])
 const session = computed(() => sessionsStore.sessions.find((item) =>
@@ -212,27 +210,31 @@ async function restoreFullWindow(geometry: NonNullable<typeof restoreGeometry.va
     await currentWindow.setMinSize(fullWindowMinSize)
   }
   await currentWindow.setAlwaysOnTop(geometry.alwaysOnTop)
+  await currentWindow.setResizable(geometry.resizable)
 }
 
 async function enterCompactMode() {
   if (compactMode.value) return
   await run(async () => {
     const currentWindow = getCurrentWindow()
-    const [size, position, maximized, alwaysOnTop] = await Promise.all([
+    const [size, position, maximized, alwaysOnTop, resizable] = await Promise.all([
       currentWindow.innerSize(),
       currentWindow.outerPosition(),
       currentWindow.isMaximized(),
       currentWindow.isAlwaysOnTop(),
+      currentWindow.isResizable(),
     ])
     const geometry = {
       size: new PhysicalSize(size.width, size.height),
       position: new PhysicalPosition(position.x, position.y),
       maximized,
       alwaysOnTop,
+      resizable,
     }
 
     try {
       if (maximized) await currentWindow.unmaximize()
+      await currentWindow.setResizable(false)
       await currentWindow.setMinSize(compactWindowSize)
       await currentWindow.setSize(compactWindowSize)
       await currentWindow.setPosition(geometry.position)
@@ -267,22 +269,26 @@ async function exitCompactMode() {
       <span class="compact-logo" data-tauri-drag-region>
         <img class="brand-logo" :src="nimboLogo" alt="Nimbo Terminal" />
       </span>
-      <div class="compact-dock-spacer" />
-      <div
-        v-if="project"
-        class="project-tile compact-project active"
-        :title="project.name"
-        :aria-label="`当前项目：${project.name}`"
-        role="img"
-        :style="{ '--tile-color': selectedProjectColor }"
-        data-tauri-drag-region
-      >
-        <img v-if="project.iconDataUrl" class="project-tile-image" :src="project.iconDataUrl" alt="" />
-        <span v-else>{{ project.initials || project.name.slice(0, 2).toUpperCase() }}</span>
-        <span v-if="runningProjectIds.includes(project.id)" class="project-dot" />
-      </div>
-      <div class="compact-dock-spacer" />
-      <button class="dock-action compact-expand" type="button" title="展开完整面板" aria-label="展开完整面板" @click="exitCompactMode">
+      <nav class="compact-project-list" aria-label="项目">
+        <button
+          v-for="(item, index) in projectsStore.projects"
+          :key="item.id"
+          class="project-tile"
+          :class="{ active: item.id === project?.id }"
+          :style="{ '--tile-color': item.iconColor || `hsl(${(index * 51 + 218) % 360} 38% 59%)` }"
+          type="button"
+          :aria-label="item.name"
+          :aria-current="item.id === project?.id ? 'page' : undefined"
+          :title="`${item.name} · ${item.path}`"
+          @mousedown.stop
+          @click="selectProject(item.id)"
+        >
+          <img v-if="item.iconDataUrl" class="project-tile-image" :src="item.iconDataUrl" alt="" />
+          <span v-else>{{ item.initials || item.name.slice(0, 2).toUpperCase() }}</span>
+          <span v-if="runningProjectIds.includes(item.id)" class="project-dot" />
+        </button>
+      </nav>
+      <button class="dock-action compact-expand" type="button" title="展开完整面板" aria-label="展开完整面板" @mousedown.stop @click="exitCompactMode">
         <PanelLeftOpen :size="19" />
       </button>
     </aside>

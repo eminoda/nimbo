@@ -45,8 +45,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .app-frame.compact-mode { min-width: 0; min-height: 0; border: 1px solid #303844; border-radius: 13px; background: #20252e; }
 .compact-dock { width: 100%; height: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-right: 1px solid #272e38; border-radius: inherit; background: #20252e; cursor: move; }
 .compact-logo { width: 36px; height: 36px; display: grid; place-items: center; }
-.compact-dock-spacer { min-height: 6px; flex: 1; }
-.compact-project { cursor: default; }
+.compact-project-list { width: 100%; min-height: 0; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+.compact-project-list::-webkit-scrollbar { display: none; }
 .compact-expand { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 9px; }
 .compact-expand:hover { color: #e1e7ef; background: #2c3440; }
 .titlebar {
