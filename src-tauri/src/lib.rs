@@ -1,4 +1,5 @@
 mod commands;
+mod git;
 mod models;
 mod process;
 mod storage;
@@ -51,6 +52,8 @@ pub fn run() {
             commands::load_settings,
             commands::settings_file_path,
             commands::list_package_scripts,
+            commands::list_project_branches,
+            commands::switch_project_branch,
             commands::save_project,
             commands::delete_project,
             commands::select_project,

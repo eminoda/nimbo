@@ -9,7 +9,7 @@ import CommandTabs from '@/components/CommandTabs.vue'
 import CommandToolbar from '@/components/CommandToolbar.vue'
 import ProjectDock from '@/components/ProjectDock.vue'
 import ProjectEditor from '@/components/ProjectEditor.vue'
-import ProjectHeader from '@/components/ProjectHeader.vue'
+import BranchSwitcher from '@/components/BranchSwitcher.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import TerminalPane from '@/components/TerminalPane.vue'
 import { useProjectsStore } from '@/stores/projects'
@@ -217,7 +217,7 @@ async function openSettingsFile() {
             @edit="openCommandEditor(command)"
             @remove="removeCommand"
           />
-          <ProjectHeader @edit="openProjectEditor(project)" @delete="removeProject(project.id)" />
+          <BranchSwitcher :key="project.id" :project-id="project.id" :busy="runningProjectIds.includes(project.id)" />
         </div>
         <CommandToolbar
           :status="status"
