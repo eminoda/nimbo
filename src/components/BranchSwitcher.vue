@@ -6,7 +6,7 @@ import type { GitBranchInfo } from '@/types/git'
 
 const props = defineProps<{ projectId: string; busy: boolean }>()
 const isOpen = shallowRef(false)
-const isLoading = shallowRef(false)
+const isLoading = shallowRef(true)
 const isSwitching = shallowRef(false)
 const searchQuery = shallowRef('')
 const error = shallowRef('')
@@ -17,17 +17,28 @@ const filteredBranches = computed(() => {
   if (!query) return branchInfo.value.localBranches
   return branchInfo.value.localBranches.filter((branch) => branch.toLocaleLowerCase().includes(query))
 })
-const currentLabel = computed(() => branchInfo.value.currentBranch || 'HEAD 分离状态')
+const currentLabel = computed(() => {
+  if (branchInfo.value.currentBranch) return branchInfo.value.currentBranch
+  if (isLoading.value) return '读取中…'
+  if (error.value) return 'Git 不可用'
+  return 'HEAD 分离状态'
+})
+let requestVersion = 0
 
 async function refreshBranches() {
+  const version = ++requestVersion
+  const projectId = props.projectId
   isLoading.value = true
   error.value = ''
   try {
-    branchInfo.value = await nimboApi.listProjectBranches(props.projectId)
+    const result = await nimboApi.listProjectBranches(projectId)
+    if (version !== requestVersion) return
+    branchInfo.value = result
   } catch (cause) {
+    if (version !== requestVersion) return
     error.value = cause instanceof Error ? cause.message : String(cause)
   } finally {
-    isLoading.value = false
+    if (version === requestVersion) isLoading.value = false
   }
 }
 
@@ -67,15 +78,17 @@ watch(() => props.projectId, () => {
   branchInfo.value = { currentBranch: null, localBranches: [] }
   searchQuery.value = ''
   error.value = ''
-  if (isOpen.value) void refreshBranches()
+  void refreshBranches()
 })
 
 onMounted(() => {
+  void refreshBranches()
   document.addEventListener('pointerdown', closeOnOutsidePointer)
   document.addEventListener('keydown', closeOnEscape)
 })
 
 onBeforeUnmount(() => {
+  requestVersion += 1
   document.removeEventListener('pointerdown', closeOnOutsidePointer)
   document.removeEventListener('keydown', closeOnEscape)
 })
