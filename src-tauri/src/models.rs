@@ -41,6 +41,8 @@ pub struct ProjectBookmark {
     #[serde(default)]
     pub icon_data_url: Option<String>,
     #[serde(default)]
+    pub icon_color: Option<String>,
+    #[serde(default)]
     pub initials: Option<String>,
     #[serde(default)]
     pub commands: Vec<CommandPreset>,

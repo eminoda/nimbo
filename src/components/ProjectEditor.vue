@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { FolderOpen, ImagePlus, X } from '@lucide/vue'
+import { FolderOpen, ImagePlus, Palette, X } from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import type { ProjectBookmark } from '@/types/project'
 
@@ -10,10 +10,16 @@ const name = shallowRef(props.project?.name ?? '')
 const path = shallowRef(props.project?.path ?? '')
 const initials = shallowRef(props.project?.initials ?? '')
 const iconDataUrl = shallowRef(props.project?.iconDataUrl ?? '')
+const iconColor = shallowRef(props.project?.iconColor ?? '')
 const error = shallowRef('')
 const imageInput = shallowRef<HTMLInputElement | null>(null)
 const title = computed(() => props.project ? '编辑项目' : '添加项目')
 const maxImageSize = 2 * 1024 * 1024
+const iconColors = [
+  '#e15b64', '#f16d4b', '#ec8b2c', '#c99b27', '#91a83a', '#54a45c',
+  '#2e9d83', '#2493a9', '#348dc4', '#4f7de5', '#6b6cd2', '#8a62cf',
+  '#ad5bbb', '#c65391', '#c65370', '#9f7355', '#71809a', '#526477',
+]
 
 async function chooseDirectory() {
   const result = await open({ directory: true, multiple: false, title: '选择项目目录' })
@@ -64,6 +70,7 @@ function save() {
     initials: initials.value.trim().slice(0, 3).toUpperCase() || undefined,
     iconPath: props.project?.iconPath,
     iconDataUrl: iconDataUrl.value || undefined,
+    iconColor: iconColor.value || undefined,
     commands: props.project?.commands ?? [],
   })
 }
@@ -80,12 +87,34 @@ function save() {
         <span>项目图片 <span class="field-note">可选，PNG / JPG / WebP，最大 2 MB</span></span>
         <input ref="imageInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" @change="loadImage" />
         <div class="project-icon-picker">
-          <div class="project-icon-preview" aria-label="项目图标预览">
+          <div class="project-icon-preview" :style="{ backgroundColor: iconColor || '#536d9e' }" aria-label="项目图标预览">
             <img v-if="iconDataUrl" :src="iconDataUrl" alt="项目图片预览" />
             <span v-else>{{ initials.trim().slice(0, 3).toUpperCase() || name.trim().slice(0, 2).toUpperCase() || '项目' }}</span>
           </div>
           <button class="secondary-button" type="button" @click="chooseImage"><ImagePlus :size="16" />选择图片</button>
           <button v-if="iconDataUrl" class="secondary-button remove-icon-button" type="button" @click="iconDataUrl = ''">移除图片</button>
+        </div>
+        <div class="project-color-row">
+          <span class="project-color-label">图标底色</span>
+          <button class="project-color-reset" :class="{ selected: !iconColor }" type="button" :aria-pressed="!iconColor" @click="iconColor = ''">自动</button>
+          <div class="project-color-grid" role="group" aria-label="选择项目图标颜色">
+            <button
+              v-for="color in iconColors"
+              :key="color"
+              class="project-color-swatch"
+              :class="{ selected: iconColor.toLowerCase() === color }"
+              :style="{ backgroundColor: color }"
+              type="button"
+              :aria-label="`选择颜色 ${color}`"
+              :aria-pressed="iconColor.toLowerCase() === color"
+              :title="color"
+              @click="iconColor = color"
+            />
+          </div>
+          <label class="project-color-custom" title="自定义颜色">
+            <Palette :size="15" aria-hidden="true" />
+            <input v-model="iconColor" type="color" aria-label="自定义图标底色" />
+          </label>
         </div>
       </div>
       <p v-if="error" class="form-error" role="alert">{{ error }}</p>

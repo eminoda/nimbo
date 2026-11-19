@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
         :key="project.id"
         class="project-tile"
         :class="{ active: project.id === selectedProjectId }"
-        :style="{ '--tile-hue': `${(index * 51 + 218) % 360}` }"
+        :style="{ '--tile-color': project.iconColor || `hsl(${(index * 51 + 218) % 360} 38% 59%)` }"
         type="button"
         :aria-label="project.name"
         :aria-current="project.id === selectedProjectId ? 'page' : undefined"
