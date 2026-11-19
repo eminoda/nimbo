@@ -62,8 +62,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .titlebar-controls button:hover { background: #323a46; color: white; }
 .titlebar-controls .close-control:hover { background: #c9424b; }
 
-.workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 54px minmax(0, 1fr); }
-.project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 14px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
+.workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 54px minmax(0, 1fr); transition: grid-template-columns .18s ease; }
+.workspace.sidebar-collapsed { grid-template-columns: 44px minmax(0, 1fr); }
+.project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
+.project-dock.is-collapsed { padding-inline: 3px; }
 .dock-action, .icon-button { display: grid; place-items: center; padding: 0; border: 0; color: #9eabbc; background: transparent; cursor: pointer; }
 .dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
 .project-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; scrollbar-width: none; }
@@ -95,6 +97,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-context-menu .editor-menu-refresh:disabled { opacity: .55; cursor: wait; }
 .dock-spacer { flex: 1; min-height: 20px; }
 .dock-action { width: 36px; height: 36px; }
+.project-dock .dock-collapse { width: 30px; height: 28px; margin-bottom: 7px; }
+.project-dock .dock-expand { margin-top: 4px; }
 
 .project-workspace { min-width: 0; min-height: 0; height: 100%; display: grid; grid-template-rows: 40px 44px minmax(0, 1fr); background: #1e232c; }
 .command-tabs-row { min-width: 0; display: flex; align-items: stretch; border-bottom: 1px solid #252c36; }

@@ -22,6 +22,7 @@ import type { SessionStatus } from '@/types/session'
 const projectsStore = useProjectsStore()
 const sessionsStore = useSessionsStore()
 const projectDialogOpen = shallowRef(false)
+const sidebarCollapsed = shallowRef(false)
 const editingProject = shallowRef<ProjectBookmark>()
 const commandDialogOpen = shallowRef(false)
 const editingCommand = shallowRef<CommandPreset>()
@@ -199,11 +200,13 @@ async function openSettingsFile() {
       </div>
     </header>
 
-    <div class="workspace">
+    <div class="workspace" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <ProjectDock
         :projects="projectsStore.projects"
         :selected-project-id="project?.id"
         :running-project-ids="runningProjectIds"
+        :collapsed="sidebarCollapsed"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
         @select="selectProject"
         @edit-project="openProjectById"
         @delete-project="removeProject"

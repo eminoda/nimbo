@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, shallowRef } from 'vue'
-import { ChevronRight, Code2, FolderPlus, Pencil, RefreshCw, Settings2, Trash2 } from '@lucide/vue'
+import { ChevronRight, Code2, FolderPlus, PanelLeftClose, PanelLeftOpen, Pencil, RefreshCw, Settings2, Trash2 } from '@lucide/vue'
 import { nimboApi } from '@/services/tauri'
 import codexIcon from '@/assets/editors/codex.png'
 import cursorIcon from '@/assets/editors/cursor.png'
@@ -8,8 +8,9 @@ import vscodeIcon from '@/assets/editors/vscode.png'
 import type { EditorId, InstalledEditor } from '@/types/editor'
 import type { ProjectBookmark } from '@/types/project'
 
-defineProps<{ projects: ProjectBookmark[]; selectedProjectId?: string; runningProjectIds: string[] }>()
+defineProps<{ projects: ProjectBookmark[]; selectedProjectId?: string; runningProjectIds: string[]; collapsed: boolean }>()
 const emit = defineEmits<{
+  toggleCollapse: []
   select: [projectId: string]
   editProject: [projectId: string]
   deleteProject: [projectId: string]
@@ -122,7 +123,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <aside class="project-dock" aria-label="项目栏">
+  <aside class="project-dock" :class="{ 'is-collapsed': collapsed }" aria-label="项目栏">
+    <button
+      v-if="!collapsed"
+      class="dock-action dock-collapse"
+      type="button"
+      title="收起侧栏"
+      aria-label="收起侧栏"
+      :aria-expanded="!collapsed"
+      @click="emit('toggleCollapse')"
+    >
+      <PanelLeftClose :size="18" />
+    </button>
     <nav class="project-list" aria-label="项目">
       <button
         v-for="(project, index) in projects"
@@ -189,11 +201,24 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div class="dock-spacer" />
-    <button class="dock-action" type="button" title="添加项目" aria-label="添加项目" @click="emit('addProject')">
-      <FolderPlus :size="18" />
+    <button
+      v-if="collapsed"
+      class="dock-action dock-expand"
+      type="button"
+      title="展开侧栏"
+      aria-label="展开侧栏"
+      :aria-expanded="!collapsed"
+      @click="emit('toggleCollapse')"
+    >
+      <PanelLeftOpen :size="18" />
     </button>
-    <button class="dock-action" type="button" title="设置" aria-label="设置" @click="emit('openSettings')">
-      <Settings2 :size="18" />
-    </button>
+    <template v-else>
+      <button class="dock-action" type="button" title="添加项目" aria-label="添加项目" @click="emit('addProject')">
+        <FolderPlus :size="18" />
+      </button>
+      <button class="dock-action" type="button" title="设置" aria-label="设置" @click="emit('openSettings')">
+        <Settings2 :size="18" />
+      </button>
+    </template>
   </aside>
 </template>
