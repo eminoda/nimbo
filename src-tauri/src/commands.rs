@@ -1,4 +1,5 @@
 use crate::{
+    editors::{self, EditorId, InstalledEditor},
     git::{self, GitBranchInfo},
     models::{
         NimboSettings, PackageScript, PackageScripts, ProjectBookmark, SessionStatus,
@@ -145,6 +146,22 @@ pub fn list_project_branches(
 ) -> Result<GitBranchInfo, String> {
     let path = project_path(&state, &project_id)?;
     git::branch_info(&path)
+}
+
+#[tauri::command]
+pub fn list_installed_editors() -> Result<Vec<InstalledEditor>, String> {
+    editors::list_installed()
+}
+
+#[tauri::command]
+pub fn open_project_in_editor(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    project_id: String,
+    editor_id: EditorId,
+) -> Result<(), String> {
+    let path = project_path(&state, &project_id)?;
+    editors::open_project(&app, editor_id, &path)
 }
 
 #[tauri::command]

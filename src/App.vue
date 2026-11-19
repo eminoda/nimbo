@@ -16,6 +16,7 @@ import { useProjectsStore } from '@/stores/projects'
 import { useSessionsStore } from '@/stores/sessions'
 import { nimboApi } from '@/services/tauri'
 import type { CommandPreset, ProjectBookmark } from '@/types/project'
+import type { EditorId } from '@/types/editor'
 import type { SessionStatus } from '@/types/session'
 
 const projectsStore = useProjectsStore()
@@ -88,6 +89,10 @@ async function saveProject(value: ProjectBookmark) {
 function openProjectById(projectId: string) {
   const target = projectsStore.projects.find((item) => item.id === projectId)
   if (target) openProjectEditor(target)
+}
+
+async function openProjectInEditor(projectId: string, editorId: EditorId) {
+  await run(() => nimboApi.openProjectInEditor(projectId, editorId))
 }
 
 async function removeProject(projectId: string) {
@@ -202,6 +207,7 @@ async function openSettingsFile() {
         @select="selectProject"
         @edit-project="openProjectById"
         @delete-project="removeProject"
+        @open-in-editor="openProjectInEditor"
         @add-project="openProjectEditor()"
         @open-settings="openSettingsPanel"
       />

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, shallowRef } from 'vue'
-import { FolderPlus, Pencil, Settings2, Trash2 } from '@lucide/vue'
+import { ChevronRight, Code2, FolderPlus, Pencil, RefreshCw, Settings2, Trash2 } from '@lucide/vue'
+import { nimboApi } from '@/services/tauri'
+import type { EditorId, InstalledEditor } from '@/types/editor'
 import type { ProjectBookmark } from '@/types/project'
 
 defineProps<{ projects: ProjectBookmark[]; selectedProjectId?: string; runningProjectIds: string[] }>()
@@ -8,6 +10,7 @@ const emit = defineEmits<{
   select: [projectId: string]
   editProject: [projectId: string]
   deleteProject: [projectId: string]
+  openInEditor: [projectId: string, editorId: EditorId]
   addProject: []
   openSettings: []
 }>()
@@ -15,22 +18,77 @@ const emit = defineEmits<{
 const contextMenu = shallowRef<{ projectId: string; x: number; y: number }>()
 const contextMenuElement = shallowRef<HTMLDivElement | null>(null)
 const firstMenuAction = shallowRef<HTMLButtonElement | null>(null)
+const ideSubmenuElement = shallowRef<HTMLDivElement | null>(null)
+const ideSubmenuOpen = shallowRef(false)
+const installedEditors = shallowRef<InstalledEditor[]>([])
+const editorScanState = shallowRef<'idle' | 'loading' | 'ready' | 'failed'>('idle')
+const editorScanError = shallowRef('')
+const submenuOpensLeft = shallowRef(false)
+let contextMenuGeneration = 0
+
+const contextMenuWidth = 172
+const contextMenuHeight = 160
+const ideSubmenuWidth = 166
 
 function closeContextMenu() {
+  contextMenuGeneration += 1
   contextMenu.value = undefined
+  ideSubmenuOpen.value = false
 }
 
 async function openContextMenu(event: MouseEvent, projectId: string) {
-  const menuWidth = 156
-  const menuHeight = 84
   const margin = 8
+  const x = Math.max(margin, Math.min(event.clientX, window.innerWidth - contextMenuWidth - margin))
+  const generation = ++contextMenuGeneration
   contextMenu.value = {
     projectId,
-    x: Math.max(margin, Math.min(event.clientX, window.innerWidth - menuWidth - margin)),
-    y: Math.max(margin, Math.min(event.clientY, window.innerHeight - menuHeight - margin)),
+    x,
+    y: Math.max(margin, Math.min(event.clientY, window.innerHeight - contextMenuHeight - margin)),
   }
+  submenuOpensLeft.value = x + contextMenuWidth + ideSubmenuWidth > window.innerWidth - margin
+  ideSubmenuOpen.value = false
+  installedEditors.value = []
+  editorScanError.value = ''
+  editorScanState.value = 'loading'
+  void scanInstalledEditors(generation)
   await nextTick()
   firstMenuAction.value?.focus()
+}
+
+async function scanInstalledEditors(generation = contextMenuGeneration) {
+  editorScanState.value = 'loading'
+  editorScanError.value = ''
+  try {
+    const editors = await nimboApi.listInstalledEditors()
+    if (generation !== contextMenuGeneration || !contextMenu.value) return
+    installedEditors.value = editors
+    editorScanState.value = 'ready'
+  } catch (error) {
+    if (generation !== contextMenuGeneration || !contextMenu.value) return
+    editorScanError.value = error instanceof Error ? error.message : String(error)
+    editorScanState.value = 'failed'
+  }
+}
+
+function openProjectInEditor(editorId: EditorId) {
+  if (!contextMenu.value) return
+  emit('openInEditor', contextMenu.value.projectId, editorId)
+  closeContextMenu()
+}
+
+async function openIdeSubmenu() {
+  ideSubmenuOpen.value = true
+  await nextTick()
+  ideSubmenuElement.value?.querySelector<HTMLButtonElement>('.editor-menu-option, .editor-menu-refresh')?.focus()
+}
+
+function handleContextEscape() {
+  if (ideSubmenuOpen.value) {
+    ideSubmenuOpen.value = false
+    firstMenuAction.value?.focus()
+  } else {
+    closeContextMenu()
+  }
 }
 
 function handleOutsideClick(event: MouseEvent) {
@@ -40,7 +98,7 @@ function handleOutsideClick(event: MouseEvent) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') closeContextMenu()
+  if (event.key === 'Escape') handleContextEscape()
 }
 
 onMounted(() => {
@@ -83,9 +141,37 @@ onBeforeUnmount(() => {
       :aria-label="'项目菜单 ' + (projects.find((project) => project.id === contextMenu?.projectId)?.name ?? '')"
       :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
       @click.stop
-      @keydown.esc.stop.prevent="closeContextMenu"
+      @keydown.esc.stop.prevent="handleContextEscape"
     >
-      <button ref="firstMenuAction" type="button" role="menuitem" @click="emit('editProject', contextMenu.projectId); closeContextMenu()">
+      <div class="project-context-submenu-anchor" :class="{ 'opens-left': submenuOpensLeft }">
+        <button
+          ref="firstMenuAction"
+          class="project-context-submenu-trigger"
+          type="button"
+          role="menuitem"
+          aria-haspopup="menu"
+          :aria-expanded="ideSubmenuOpen"
+          @click="ideSubmenuOpen = !ideSubmenuOpen"
+          @keydown.right.prevent="openIdeSubmenu"
+        >
+          <Code2 :size="15" />在 IDE 中打开<ChevronRight class="context-submenu-arrow" :size="14" />
+        </button>
+        <div v-if="ideSubmenuOpen" ref="ideSubmenuElement" class="project-context-submenu" role="menu" aria-label="选择 IDE" @click.stop @keydown.left.stop.prevent="handleContextEscape">
+          <p v-if="editorScanState === 'loading'" class="editor-menu-message" role="status">正在检测 IDE…</p>
+          <p v-else-if="editorScanState === 'failed'" class="editor-menu-message editor-menu-error" role="alert">检测失败：{{ editorScanError }}</p>
+          <p v-else-if="installedEditors.length === 0" class="editor-menu-message">未检测到 IDE</p>
+          <button v-for="editor in installedEditors" v-else :key="editor.id" type="button" role="menuitem" class="editor-menu-option" @click="openProjectInEditor(editor.id)">
+            <span class="editor-menu-mark" :class="`editor-${editor.id}`">{{ editor.id === 'vscode' ? 'VS' : editor.name.slice(0, 1) }}</span>
+            {{ editor.name }}
+          </button>
+          <div class="editor-menu-divider" role="separator" />
+          <button class="editor-menu-refresh" type="button" role="menuitem" :disabled="editorScanState === 'loading'" @click="scanInstalledEditors()">
+            <RefreshCw :size="13" :class="{ spinning: editorScanState === 'loading' }" />重新扫描
+          </button>
+        </div>
+      </div>
+      <div class="project-context-divider" role="separator" />
+      <button type="button" role="menuitem" @click="emit('editProject', contextMenu.projectId); closeContextMenu()">
         <Pencil :size="15" />编辑项目
       </button>
       <button class="danger" type="button" role="menuitem" @click="emit('deleteProject', contextMenu.projectId); closeContextMenu()">

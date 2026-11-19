@@ -1,4 +1,5 @@
 mod commands;
+mod editors;
 mod git;
 mod models;
 mod process;
@@ -54,6 +55,8 @@ pub fn run() {
             commands::list_package_scripts,
             commands::list_project_branches,
             commands::switch_project_branch,
+            commands::list_installed_editors,
+            commands::open_project_in_editor,
             commands::save_project,
             commands::delete_project,
             commands::select_project,
