@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, shallowRef, toRaw, watch } from 'vue'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow, LogicalSize, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window'
 import { openPath } from '@tauri-apps/plugin-opener'
-import { Minus, Square, X, Command, PanelLeftClose } from '@lucide/vue'
+import { Minus, Square, X, Command, PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
 import nimboLogo from './assets/nimbo-logo.svg'
 import CommandEditor from '@/components/CommandEditor.vue'
 import CommandTabs from '@/components/CommandTabs.vue'
@@ -22,7 +22,13 @@ import type { SessionStatus } from '@/types/session'
 const projectsStore = useProjectsStore()
 const sessionsStore = useSessionsStore()
 const projectDialogOpen = shallowRef(false)
-const sidebarCollapsed = shallowRef(false)
+const compactMode = shallowRef(false)
+const restoreGeometry = shallowRef<{
+  size: PhysicalSize
+  position: PhysicalPosition
+  maximized: boolean
+  alwaysOnTop: boolean
+}>()
 const editingProject = shallowRef<ProjectBookmark>()
 const commandDialogOpen = shallowRef(false)
 const editingCommand = shallowRef<CommandPreset>()
@@ -32,6 +38,9 @@ const toast = shallowRef('')
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const project = computed(() => projectsStore.selectedProject)
+const selectedProjectIndex = computed(() => projectsStore.projects.findIndex((item) => item.id === project.value?.id))
+const selectedProjectColor = computed(() => project.value?.iconColor
+  || `hsl(${(Math.max(0, selectedProjectIndex.value) * 51 + 218) % 360} 38% 59%)`)
 const command = computed(() => project.value?.commands.find((item) => item.id === projectsStore.selectedCommandId)
   ?? project.value?.commands[0])
 const session = computed(() => sessionsStore.sessions.find((item) =>
@@ -48,6 +57,9 @@ const statuses = computed<Record<string, SessionStatus>>(() => Object.fromEntrie
 const runningProjectIds = computed(() => [...new Set(sessionsStore.sessions
   .filter((item) => item.status === 'running' || item.status === 'starting' || item.status === 'stopping')
   .map((item) => item.projectId))])
+const fullWindowMinSize = new LogicalSize(720, 480)
+// 54px is the full dock's CSS width; add 2px for the compact frame border.
+const compactWindowSize = new LogicalSize(56, 168)
 
 function showToast(message: string) {
   toast.value = message
@@ -187,10 +199,94 @@ async function openSettingsFile() {
     await openPath(path)
   })
 }
+
+async function restoreFullWindow(geometry: NonNullable<typeof restoreGeometry.value>) {
+  const currentWindow = getCurrentWindow()
+  await currentWindow.setMinSize(null)
+  if (geometry.maximized) {
+    await currentWindow.setMinSize(fullWindowMinSize)
+    await currentWindow.maximize()
+  } else {
+    await currentWindow.setSize(geometry.size)
+    await currentWindow.setPosition(geometry.position)
+    await currentWindow.setMinSize(fullWindowMinSize)
+  }
+  await currentWindow.setAlwaysOnTop(geometry.alwaysOnTop)
+}
+
+async function enterCompactMode() {
+  if (compactMode.value) return
+  await run(async () => {
+    const currentWindow = getCurrentWindow()
+    const [size, position, maximized, alwaysOnTop] = await Promise.all([
+      currentWindow.innerSize(),
+      currentWindow.outerPosition(),
+      currentWindow.isMaximized(),
+      currentWindow.isAlwaysOnTop(),
+    ])
+    const geometry = {
+      size: new PhysicalSize(size.width, size.height),
+      position: new PhysicalPosition(position.x, position.y),
+      maximized,
+      alwaysOnTop,
+    }
+
+    try {
+      if (maximized) await currentWindow.unmaximize()
+      await currentWindow.setMinSize(compactWindowSize)
+      await currentWindow.setSize(compactWindowSize)
+      await currentWindow.setPosition(geometry.position)
+      await currentWindow.setAlwaysOnTop(true)
+      restoreGeometry.value = geometry
+      document.documentElement.classList.add('compact-window')
+      compactMode.value = true
+    } catch (error) {
+      await restoreFullWindow(geometry).catch(() => undefined)
+      throw error
+    }
+  })
+}
+
+async function exitCompactMode() {
+  const geometry = restoreGeometry.value
+  if (!geometry) return
+  try {
+    await restoreFullWindow(geometry)
+    restoreGeometry.value = undefined
+    document.documentElement.classList.remove('compact-window')
+    compactMode.value = false
+  } catch (error) {
+    window.alert(error instanceof Error ? error.message : String(error))
+  }
+}
 </script>
 
 <template>
-  <main class="app-frame">
+  <main class="app-frame" :class="{ 'compact-mode': compactMode }">
+    <aside v-if="compactMode" class="compact-dock" data-tauri-drag-region aria-label="紧凑项目栏">
+      <span class="compact-logo" data-tauri-drag-region>
+        <img class="brand-logo" :src="nimboLogo" alt="Nimbo Terminal" />
+      </span>
+      <div class="compact-dock-spacer" />
+      <div
+        v-if="project"
+        class="project-tile compact-project active"
+        :title="project.name"
+        :aria-label="`当前项目：${project.name}`"
+        role="img"
+        :style="{ '--tile-color': selectedProjectColor }"
+        data-tauri-drag-region
+      >
+        <img v-if="project.iconDataUrl" class="project-tile-image" :src="project.iconDataUrl" alt="" />
+        <span v-else>{{ project.initials || project.name.slice(0, 2).toUpperCase() }}</span>
+        <span v-if="runningProjectIds.includes(project.id)" class="project-dot" />
+      </div>
+      <div class="compact-dock-spacer" />
+      <button class="dock-action compact-expand" type="button" title="展开完整面板" aria-label="展开完整面板" @click="exitCompactMode">
+        <PanelLeftOpen :size="19" />
+      </button>
+    </aside>
+    <template v-else>
     <header class="titlebar" data-tauri-drag-region @dblclick="toggleWindowSize">
       <div class="titlebar-brand" data-tauri-drag-region><span class="brand-icon"><img class="brand-logo" :src="nimboLogo" alt="" aria-hidden="true" /></span><strong v-if="project" class="titlebar-project-name">{{ project.name }}</strong></div>
       <div class="titlebar-controls">
@@ -200,13 +296,12 @@ async function openSettingsFile() {
       </div>
     </header>
 
-    <div class="workspace" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+    <div class="workspace">
       <ProjectDock
         :projects="projectsStore.projects"
         :selected-project-id="project?.id"
         :running-project-ids="runningProjectIds"
-        :collapsed="sidebarCollapsed"
-        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+        @compact="enterCompactMode"
         @select="selectProject"
         @edit-project="openProjectById"
         @delete-project="removeProject"
@@ -261,5 +356,6 @@ async function openSettingsFile() {
     <ProjectEditor v-if="projectDialogOpen" :project="editingProject" @save="saveProject" @cancel="projectDialogOpen = false" />
     <CommandEditor v-if="commandDialogOpen && project" :command="editingCommand" :project-id="project.id" :project-path="project.path" @save="saveCommand" @cancel="commandDialogOpen = false" />
     <SettingsPanel v-if="settingsOpen" :close-to-tray="projectsStore.settings.closeToTray" :config-path="settingsFilePath" @close="settingsOpen = false" @open-config="openSettingsFile" @update-close-to-tray="(value) => run(() => projectsStore.setCloseToTray(value))" />
+    </template>
   </main>
 </template>

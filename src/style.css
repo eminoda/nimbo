@@ -25,6 +25,7 @@
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
 body { min-width: 640px; min-height: 460px; user-select: none; }
+html.compact-window body { min-width: 0; min-height: 0; }
 button, input, textarea, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid #7ca5f8; outline-offset: 2px; }
@@ -41,6 +42,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   display: flex;
   flex-direction: column;
 }
+.app-frame.compact-mode { min-width: 0; min-height: 0; border: 1px solid #303844; border-radius: 13px; background: #20252e; }
+.compact-dock { width: 100%; height: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-right: 1px solid #272e38; border-radius: inherit; background: #20252e; cursor: move; }
+.compact-logo { width: 36px; height: 36px; display: grid; place-items: center; }
+.compact-dock-spacer { min-height: 6px; flex: 1; }
+.compact-project { cursor: default; }
+.compact-expand { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 9px; }
+.compact-expand:hover { color: #e1e7ef; background: #2c3440; }
 .titlebar {
   height: 42px;
   min-height: 42px;
@@ -62,10 +70,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .titlebar-controls button:hover { background: #323a46; color: white; }
 .titlebar-controls .close-control:hover { background: #c9424b; }
 
-.workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 54px minmax(0, 1fr); transition: grid-template-columns .18s ease; }
-.workspace.sidebar-collapsed { grid-template-columns: 44px minmax(0, 1fr); }
+.workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 54px minmax(0, 1fr); }
 .project-dock { min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 8px; gap: 0; background: #20252e; border-right: 1px solid #272e38; }
-.project-dock.is-collapsed { padding-inline: 3px; }
 .dock-action, .icon-button { display: grid; place-items: center; padding: 0; border: 0; color: #9eabbc; background: transparent; cursor: pointer; }
 .dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
 .project-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; scrollbar-width: none; }
@@ -97,8 +103,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-context-menu .editor-menu-refresh:disabled { opacity: .55; cursor: wait; }
 .dock-spacer { flex: 1; min-height: 20px; }
 .dock-action { width: 36px; height: 36px; }
-.project-dock .dock-collapse { width: 30px; height: 28px; margin-bottom: 7px; }
-.project-dock .dock-expand { margin-top: 4px; }
+.project-dock .dock-collapse { flex: 0 0 36px; }
 
 .project-workspace { min-width: 0; min-height: 0; height: 100%; display: grid; grid-template-rows: 40px 44px minmax(0, 1fr); background: #1e232c; }
 .command-tabs-row { min-width: 0; display: flex; align-items: stretch; border-bottom: 1px solid #252c36; }
