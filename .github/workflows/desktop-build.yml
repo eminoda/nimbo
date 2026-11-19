@@ -1,0 +1,123 @@
+name: Desktop Build and Release
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            apple_signing_identity: ''
+          - name: macos-intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+            apple_signing_identity: '-'
+          - name: macos-apple-silicon
+            os: macos-latest
+            target: aarch64-apple-darwin
+            apple_signing_identity: '-'
+    env:
+      APPLE_SIGNING_IDENTITY: ${{ matrix.apple_signing_identity }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.32.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Validate release tag version
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/validate-release-version.mjs
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri application
+        run: pnpm tauri build --target ${{ matrix.target }}
+
+      - name: Prepare installer files
+        run: node scripts/collect-tauri-installers.mjs --target ${{ matrix.target }} --name ${{ matrix.name }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: nimbo-${{ matrix.name }}
+          path: release-assets/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all platform installers
+        uses: actions/download-artifact@v8
+        with:
+          pattern: nimbo-*
+          path: release-assets
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          mapfile -d '' assets < <(find release-assets -type f -print0)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No installers were downloaded for ${TAG_NAME}." >&2
+            exit 1
+          fi
+
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            echo "Release ${TAG_NAME} already exists; replacing its installer assets."
+          else
+            gh release create "${TAG_NAME}" \
+              --title "Nimbo Terminal ${TAG_NAME}" \
+              --generate-notes
+          fi
+
+          gh release upload "${TAG_NAME}" "${assets[@]}" --clobber
