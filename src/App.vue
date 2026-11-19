@@ -191,7 +191,7 @@ async function openSettingsFile() {
 <template>
   <main class="app-frame">
     <header class="titlebar" data-tauri-drag-region @dblclick="toggleWindowSize">
-      <div class="titlebar-brand" data-tauri-drag-region><span class="brand-icon"><img class="brand-logo" :src="nimboLogo" alt="" aria-hidden="true" /></span><strong>Nimbo Terminal</strong><span class="titlebar-separator">/</span><span class="titlebar-section">Workspace</span></div>
+      <div class="titlebar-brand" data-tauri-drag-region><span class="brand-icon"><img class="brand-logo" :src="nimboLogo" alt="" aria-hidden="true" /></span><strong v-if="project" class="titlebar-project-name">{{ project.name }}</strong></div>
       <div class="titlebar-controls">
         <button type="button" title="最小化" aria-label="最小化" @mousedown.stop @click="minimizeWindow"><Minus :size="17" /></button>
         <button type="button" title="最大化 / 还原" aria-label="最大化或还原" @mousedown.stop @click="toggleWindowSize"><Square :size="16" /></button>

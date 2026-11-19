@@ -6,6 +6,7 @@ use std::{path::Path, process::Command};
 pub struct GitBranchInfo {
     pub current_branch: Option<String>,
     pub local_branches: Vec<String>,
+    pub worktree_branches: Vec<String>,
 }
 
 fn run_git(project_path: &Path, args: &[&str]) -> Result<String, String> {
@@ -36,6 +37,9 @@ fn run_git(project_path: &Path, args: &[&str]) -> Result<String, String> {
 pub fn branch_info(project_path: &Path) -> Result<GitBranchInfo, String> {
     let current = run_git(project_path, &["branch", "--show-current"])?;
     let branches = run_git(project_path, &["branch", "--format=%(refname:short)"])?;
+    let worktrees = run_git(project_path, &["worktree", "list", "--porcelain"])?;
+    let project_path =
+        std::fs::canonicalize(project_path).unwrap_or_else(|_| project_path.to_path_buf());
     let mut local_branches = branches
         .lines()
         .map(str::trim)
@@ -45,12 +49,36 @@ pub fn branch_info(project_path: &Path) -> Result<GitBranchInfo, String> {
     local_branches.sort_unstable();
     local_branches.dedup();
 
+    let mut worktree_branches = Vec::new();
+    let mut worktree_path = None;
+    for line in worktrees.lines() {
+        if let Some(path) = line.strip_prefix("worktree ") {
+            worktree_path = Some(Path::new(path));
+        } else if let Some(name) = line.strip_prefix("branch refs/heads/") {
+            if let Some(path) = worktree_path {
+                let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+                let same_path = if cfg!(windows) {
+                    path.to_string_lossy()
+                        .eq_ignore_ascii_case(&project_path.to_string_lossy())
+                } else {
+                    path == project_path
+                };
+                if !same_path {
+                    worktree_branches.push(name.to_owned());
+                }
+            }
+        }
+    }
+    worktree_branches.sort_unstable();
+    worktree_branches.dedup();
+
     Ok(GitBranchInfo {
         current_branch: match current.trim() {
             "" => None,
             branch => Some(branch.to_owned()),
         },
         local_branches,
+        worktree_branches,
     })
 }
 

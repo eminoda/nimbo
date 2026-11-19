@@ -10,7 +10,7 @@ const isLoading = shallowRef(true)
 const isSwitching = shallowRef(false)
 const searchQuery = shallowRef('')
 const error = shallowRef('')
-const branchInfo = shallowRef<GitBranchInfo>({ currentBranch: null, localBranches: [] })
+const branchInfo = shallowRef<GitBranchInfo>({ currentBranch: null, localBranches: [], worktreeBranches: [] })
 const rootElement = shallowRef<HTMLDivElement | null>(null)
 const filteredBranches = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase()
@@ -75,7 +75,7 @@ watch(isOpen, (open) => {
 })
 
 watch(() => props.projectId, () => {
-  branchInfo.value = { currentBranch: null, localBranches: [] }
+  branchInfo.value = { currentBranch: null, localBranches: [], worktreeBranches: [] }
   searchQuery.value = ''
   error.value = ''
   void refreshBranches()
@@ -140,6 +140,7 @@ onBeforeUnmount(() => {
           @click="switchBranch(branch)"
         >
           <span class="branch-option-name">{{ branch }}</span>
+          <span v-if="branchInfo.worktreeBranches.includes(branch)" class="branch-worktree-badge" title="已在其他 worktree 中检出">Worktree</span>
           <Check v-if="branch === branchInfo.currentBranch" :size="14" />
           <span v-else-if="isSwitching" class="branch-option-hint">切换中</span>
         </button>

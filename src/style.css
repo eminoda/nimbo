@@ -56,8 +56,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .brand-icon { color: #88adff; display: flex; }
 .brand-logo { width: 23px; height: 23px; object-fit: contain; }
 .titlebar-brand strong { font-size: 15px; letter-spacing: -.025em; font-weight: 700; }
-.titlebar-separator { color: #566172; font-size: 20px; margin-left: 1px; }
-.titlebar-section { color: var(--muted); font-size: 13px; }
+.titlebar-project-name { max-width: min(42vw, 420px); overflow: hidden; color: #c8d1df; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { height: 100%; display: flex; align-items: stretch; margin: 0 -11px 0 0; }
 .titlebar-controls button { width: 42px; border: 0; border-radius: 0; color: #9ba6b5; display: grid; place-items: center; background: transparent; cursor: pointer; }
 .titlebar-controls button:hover { background: #323a46; color: white; }
@@ -137,6 +136,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .branch-option.current { color: #91b5ff; }
 .branch-option:disabled { cursor: default; }
 .branch-option-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branch-worktree-badge { flex: 0 0 auto; padding: 2px 5px; border: 1px solid #3c655b; border-radius: 4px; color: #80d9b7; background: #253a35; font-size: 9px; line-height: 1.2; }
 .branch-option-hint { color: #7f8da1; font-size: 10px; }
 .branch-empty, .branch-error, .branch-notice { margin: 4px 12px 10px; color: #8391a5; font-size: 11px; line-height: 1.5; }
 .branch-error { color: #ff9ca4; overflow-wrap: anywhere; }
