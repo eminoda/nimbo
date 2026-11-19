@@ -68,8 +68,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .dock-action:hover, .icon-button:hover:not(:disabled) { color: #dce7fa; }
 .project-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; scrollbar-width: none; }
 .project-list::-webkit-scrollbar { display: none; }
-.project-tile { position: relative; width: 36px; height: 36px; flex: 0 0 36px; border: 0; border-radius: 10px; color: #f4f6fb; background: hsl(var(--tile-hue) 38% 59%); font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: -.04em; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
-.project-tile:hover { transform: translateY(-1px); box-shadow: 0 6px 18px #0003; }
+.project-tile { position: relative; width: 36px; height: 36px; flex: 0 0 36px; border: 0; border-radius: 10px; color: #f4f6fb; background: hsl(var(--tile-hue) 38% 59%); font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: -.04em; cursor: pointer; transition: box-shadow .16s ease; }
+.project-tile:hover { box-shadow: 0 6px 18px #0003; }
 .project-tile.active { box-shadow: 0 0 0 3px #343d49; }
 .project-tile-image { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .project-dot { position: absolute; right: -3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 2px #20252e; }
@@ -86,10 +86,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-context-submenu-anchor.opens-left .project-context-submenu { right: calc(100% + 7px); left: auto; }
 .project-context-menu .project-context-divider, .project-context-submenu .editor-menu-divider { height: 1px; margin: 4px 5px; background: #3a4451; }
 .project-context-menu .editor-menu-option { gap: 8px; }
-.editor-menu-mark { width: 18px; height: 18px; flex: 0 0 18px; display: grid; place-items: center; border-radius: 5px; color: #f2f5fa; background: #59677b; font-size: 8px; font-weight: 700; letter-spacing: -.04em; }
-.editor-codex { color: #c3e0d8; background: #276b5c; }
-.editor-vscode { color: #b9dcff; background: #225f94; }
-.editor-cursor { color: #e2e5ed; background: #515968; }
+.editor-menu-icon { width: 18px; height: 18px; flex: 0 0 18px; object-fit: contain; }
 .project-context-menu .editor-menu-message { margin: 5px 7px; color: #a3afbe; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .project-context-menu .editor-menu-error { color: #ff9ca4; }
 .project-context-menu .editor-menu-refresh { height: 30px; color: #9ab7e7; font-size: 11px; }

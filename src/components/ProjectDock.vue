@@ -2,6 +2,9 @@
 import { nextTick, onBeforeUnmount, onMounted, shallowRef } from 'vue'
 import { ChevronRight, Code2, FolderPlus, Pencil, RefreshCw, Settings2, Trash2 } from '@lucide/vue'
 import { nimboApi } from '@/services/tauri'
+import codexIcon from '@/assets/editors/codex.png'
+import cursorIcon from '@/assets/editors/cursor.png'
+import vscodeIcon from '@/assets/editors/vscode.png'
 import type { EditorId, InstalledEditor } from '@/types/editor'
 import type { ProjectBookmark } from '@/types/project'
 
@@ -25,6 +28,12 @@ const editorScanState = shallowRef<'idle' | 'loading' | 'ready' | 'failed'>('idl
 const editorScanError = shallowRef('')
 const submenuOpensLeft = shallowRef(false)
 let contextMenuGeneration = 0
+
+const editorIcons: Record<EditorId, string> = {
+  codex: codexIcon,
+  vscode: vscodeIcon,
+  cursor: cursorIcon,
+}
 
 const contextMenuWidth = 172
 const contextMenuHeight = 160
@@ -161,7 +170,7 @@ onBeforeUnmount(() => {
           <p v-else-if="editorScanState === 'failed'" class="editor-menu-message editor-menu-error" role="alert">检测失败：{{ editorScanError }}</p>
           <p v-else-if="installedEditors.length === 0" class="editor-menu-message">未检测到 IDE</p>
           <button v-for="editor in installedEditors" v-else :key="editor.id" type="button" role="menuitem" class="editor-menu-option" @click="openProjectInEditor(editor.id)">
-            <span class="editor-menu-mark" :class="`editor-${editor.id}`">{{ editor.id === 'vscode' ? 'VS' : editor.name.slice(0, 1) }}</span>
+            <img class="editor-menu-icon" :src="editorIcons[editor.id]" alt="" aria-hidden="true" />
             {{ editor.name }}
           </button>
           <div class="editor-menu-divider" role="separator" />
