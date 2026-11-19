@@ -83,7 +83,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .context-submenu-arrow { margin-left: auto; color: #8391a5; }
 .project-context-submenu-anchor:has(.project-context-submenu) > .project-context-submenu-trigger { color: #fff; background: #343d49; }
 .project-context-submenu { position: absolute; z-index: 41; top: -6px; left: calc(100% + 7px); width: 166px; padding: 5px; border: 1px solid #3b4655; border-radius: 9px; background: #252c36; box-shadow: 0 12px 28px #0008; }
+.project-context-submenu::before { position: absolute; top: 0; left: -8px; width: 8px; height: 100%; content: ''; }
 .project-context-submenu-anchor.opens-left .project-context-submenu { right: calc(100% + 7px); left: auto; }
+.project-context-submenu-anchor.opens-left .project-context-submenu::before { right: -8px; left: auto; }
 .project-context-menu .project-context-divider, .project-context-submenu .editor-menu-divider { height: 1px; margin: 4px 5px; background: #3a4451; }
 .project-context-menu .editor-menu-option { gap: 8px; }
 .editor-menu-icon { width: 18px; height: 18px; flex: 0 0 18px; object-fit: contain; }

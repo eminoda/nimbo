@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
       @click.stop
       @keydown.esc.stop.prevent="handleContextEscape"
     >
-      <div class="project-context-submenu-anchor" :class="{ 'opens-left': submenuOpensLeft }">
+      <div class="project-context-submenu-anchor" :class="{ 'opens-left': submenuOpensLeft }" @mouseleave="ideSubmenuOpen = false">
         <button
           ref="firstMenuAction"
           class="project-context-submenu-trigger"
@@ -160,7 +160,8 @@ onBeforeUnmount(() => {
           role="menuitem"
           aria-haspopup="menu"
           :aria-expanded="ideSubmenuOpen"
-          @click="ideSubmenuOpen = !ideSubmenuOpen"
+          @mouseenter="ideSubmenuOpen = true"
+          @click="ideSubmenuOpen = true"
           @keydown.right.prevent="openIdeSubmenu"
         >
           <Code2 :size="15" />在 IDE 中打开<ChevronRight class="context-submenu-arrow" :size="14" />
