@@ -56,8 +56,12 @@ const runningProjectIds = computed(() => [...new Set(sessionsStore.sessions
   .filter((item) => item.status === 'running' || item.status === 'starting' || item.status === 'stopping')
   .map((item) => item.projectId))])
 const fullWindowMinSize = new LogicalSize(720, 480)
-// 54px is the full dock's CSS width; add 2px for the compact frame border.
-const compactWindowSize = new LogicalSize(56, 168)
+// Keep the dock width unchanged and size its height for the full project list.
+// 44px per tile includes the 36px tile and 8px gap; cap very long lists to a scrollable panel.
+const compactWindowSize = computed(() => new LogicalSize(
+  56,
+  Math.min(480, Math.max(168, projectsStore.projects.length * 44 + 84)),
+))
 
 function showToast(message: string) {
   toast.value = message
@@ -235,8 +239,8 @@ async function enterCompactMode() {
     try {
       if (maximized) await currentWindow.unmaximize()
       await currentWindow.setResizable(false)
-      await currentWindow.setMinSize(compactWindowSize)
-      await currentWindow.setSize(compactWindowSize)
+      await currentWindow.setMinSize(compactWindowSize.value)
+      await currentWindow.setSize(compactWindowSize.value)
       await currentWindow.setPosition(geometry.position)
       await currentWindow.setAlwaysOnTop(true)
       restoreGeometry.value = geometry
