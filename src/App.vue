@@ -12,6 +12,7 @@ import ProjectEditor from '@/components/ProjectEditor.vue'
 import BranchSwitcher from '@/components/BranchSwitcher.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import TerminalPane from '@/components/TerminalPane.vue'
+import { useProjectReorder } from '@/composables/useProjectReorder'
 import { useProjectsStore } from '@/stores/projects'
 import { useSessionsStore } from '@/stores/sessions'
 import { nimboApi } from '@/services/tauri'
@@ -77,9 +78,14 @@ async function run(action: () => Promise<unknown>) {
 onMounted(async () => {
   try {
     await Promise.all([projectsStore.initialize(), sessionsStore.initialize()])
+    await ensureTerminal()
   } catch (error) {
     showToast(error instanceof Error ? error.message : String(error))
   }
+})
+
+watch(() => [project.value?.id, command.value?.id], () => {
+  void ensureTerminal().catch((error) => showToast(error instanceof Error ? error.message : String(error)))
 })
 
 watch(() => sessionsStore.error, (value) => { if (value) showToast(value) })
@@ -169,6 +175,25 @@ async function startCommand() {
   await run(() => sessionsStore.start(project.value!.id, command.value!.id))
 }
 
+async function ensureTerminal() {
+  if (!project.value || !command.value) return
+  const existing = sessionsStore.sessions.find((item) =>
+    item.projectId === project.value?.id && item.commandId === command.value?.id,
+  )
+  if (existing && !['exited', 'failed'].includes(existing.status)) return
+  await sessionsStore.openTerminal(project.value.id, command.value.id)
+}
+
+async function writeTerminal(data: string) {
+  if (!session.value) return
+  await run(() => sessionsStore.writeTerminal(session.value!.sessionId, new TextEncoder().encode(data)))
+}
+
+async function resizeTerminal(rows: number, cols: number) {
+  if (!session.value) return
+  await run(() => sessionsStore.resizeTerminal(session.value!.sessionId, rows, cols))
+}
+
 async function stopCommand() {
   if (session.value) await run(() => sessionsStore.stop(session.value!.sessionId))
 }
@@ -185,6 +210,28 @@ async function selectCommand(id: string) {
 
 async function selectProject(id: string) {
   await run(() => projectsStore.selectProject(id))
+}
+
+async function reorderProjects(projectOrder: string[]) {
+  await run(() => projectsStore.reorderProjects(projectOrder))
+}
+
+const {
+  draggingProjectId: compactDraggingProjectId,
+  dragOverProjectId: compactDragOverProjectId,
+  dropPosition: compactDropPosition,
+  startDrag: startCompactDrag,
+  moveDrag: moveCompactDrag,
+  endDrag: endCompactDrag,
+  cancelDrag: cancelCompactDrag,
+  handleClick: handleCompactDragClick,
+} = useProjectReorder(
+  () => projectsStore.projects,
+  (projectOrder) => { void reorderProjects(projectOrder) },
+)
+
+function selectCompactProject(event: MouseEvent, projectId: string) {
+  if (!handleCompactDragClick(event)) void selectProject(projectId)
 }
 
 async function minimizeWindow() { await run(() => getCurrentWindow().minimize()) }
@@ -278,17 +325,29 @@ async function exitCompactMode() {
           v-for="(item, index) in projectsStore.projects"
           :key="item.id"
           class="project-tile"
-          :class="{ active: item.id === project?.id }"
+          :class="{
+            active: item.id === project?.id,
+            dragging: item.id === compactDraggingProjectId,
+            'drop-target': item.id === compactDragOverProjectId && item.id !== compactDraggingProjectId,
+            'drop-before': item.id === compactDropPosition?.projectId && compactDropPosition?.side === 'before',
+            'drop-after': item.id === compactDropPosition?.projectId && compactDropPosition?.side === 'after',
+            reorderable: projectsStore.projects.length > 1,
+          }"
           :style="{ '--tile-color': item.iconColor || `hsl(${(index * 51 + 218) % 360} 38% 59%)` }"
           type="button"
+          :data-project-id="item.id"
           :aria-label="item.name"
           :aria-current="item.id === project?.id ? 'page' : undefined"
           :title="`${item.name} · ${item.path}`"
           @mousedown.stop
-          @click="selectProject(item.id)"
+          @pointerdown="startCompactDrag($event, item.id)"
+          @pointermove="moveCompactDrag"
+          @pointerup="endCompactDrag"
+          @pointercancel="cancelCompactDrag"
+          @click="selectCompactProject($event, item.id)"
         >
           <img v-if="item.iconDataUrl" class="project-tile-image" :src="item.iconDataUrl" alt="" />
-          <span v-else>{{ item.initials || item.name.slice(0, 2).toUpperCase() }}</span>
+          <span v-else>{{ Array.from(item.initials || item.name).slice(0, 4).join('').toUpperCase() }}</span>
           <span v-if="runningProjectIds.includes(item.id)" class="project-dot" />
         </button>
       </nav>
@@ -313,6 +372,7 @@ async function exitCompactMode() {
         :running-project-ids="runningProjectIds"
         @compact="enterCompactMode"
         @select="selectProject"
+        @reorder="reorderProjects"
         @edit-project="openProjectById"
         @delete-project="removeProject"
         @open-in-editor="openProjectInEditor"
@@ -345,8 +405,8 @@ async function exitCompactMode() {
           :session-id="session?.sessionId"
           :chunks="logChunks"
           :clear-version="sessionsStore.clearVersion"
-          :running="status === 'running' || status === 'starting'"
-          @interrupt="stopCommand"
+          @input="writeTerminal"
+          @resize="resizeTerminal"
         />
       </section>
 

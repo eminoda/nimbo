@@ -1,4 +1,4 @@
-export type SessionStatus = 'stopped' | 'starting' | 'running' | 'stopping' | 'exited' | 'failed'
+export type SessionStatus = 'stopped' | 'ready' | 'starting' | 'running' | 'stopping' | 'exited' | 'failed'
 
 export interface TerminalSession {
   sessionId: string
@@ -14,7 +14,7 @@ export interface TerminalSession {
 export interface SessionOutputEvent {
   sessionId: string
   stream: 'stdout' | 'stderr'
-  chunk: string
+  chunk: number[]
 }
 
 export interface SessionStateEvent {

@@ -15,6 +15,7 @@ export const useSessionsStore = defineStore('sessions', () => {
   const unlisten = shallowRef<UnlistenFn[]>([])
   let sequence = 0
   let initialized = false
+  const inputQueues = new Map<string, Promise<void>>()
   const pendingStates = new Map<string, SessionStateEvent>()
 
   function updateSession(session: TerminalSession) {
@@ -71,7 +72,39 @@ export const useSessionsStore = defineStore('sessions', () => {
     const session = await nimboApi.startCommand(projectId, commandId)
     const pending = pendingStates.get(session.sessionId)
     pendingStates.delete(session.sessionId)
-    updateSession(pending ? { ...session, status: pending.status, exitCode: pending.exitCode } : session)
+    if (pending) updateSession({ ...session, status: pending.status, exitCode: pending.exitCode })
+    else if (!sessions.value.some((item) => item.sessionId === session.sessionId)) updateSession(session)
+  }
+
+  async function openTerminal(projectId: string, commandId: string) {
+    error.value = null
+    const session = await nimboApi.openTerminal(projectId, commandId)
+    const pending = pendingStates.get(session.sessionId)
+    pendingStates.delete(session.sessionId)
+    sessions.value = sessions.value.filter((item) =>
+      item.sessionId === session.sessionId
+        || item.projectId !== projectId
+        || item.commandId !== commandId,
+    )
+    logs.value = Object.fromEntries(Object.entries(logs.value)
+      .filter(([sessionId]) => sessionId === session.sessionId || sessions.value.some((item) => item.sessionId === sessionId)))
+    const resolved = pending ? { ...session, status: pending.status, exitCode: pending.exitCode } : session
+    updateSession(resolved)
+    return resolved
+  }
+
+  async function writeTerminal(sessionId: string, data: Uint8Array) {
+    const previous = inputQueues.get(sessionId) ?? Promise.resolve()
+    const next = previous.then(() => nimboApi.writeTerminal(sessionId, Array.from(data)))
+    inputQueues.set(sessionId, next)
+    try { await next }
+    finally {
+      if (inputQueues.get(sessionId) === next) inputQueues.delete(sessionId)
+    }
+  }
+
+  async function resizeTerminal(sessionId: string, rows: number, cols: number) {
+    await nimboApi.resizeTerminal(sessionId, rows, cols)
   }
 
   async function stop(sessionId: string) {
@@ -84,7 +117,8 @@ export const useSessionsStore = defineStore('sessions', () => {
     const session = await nimboApi.reloadSession(sessionId)
     const pending = pendingStates.get(session.sessionId)
     pendingStates.delete(session.sessionId)
-    updateSession(pending ? { ...session, status: pending.status, exitCode: pending.exitCode } : session)
+    if (pending) updateSession({ ...session, status: pending.status, exitCode: pending.exitCode })
+    else if (!sessions.value.some((item) => item.sessionId === session.sessionId)) updateSession(session)
   }
 
   function clear(sessionId: string) {
@@ -109,5 +143,5 @@ export const useSessionsStore = defineStore('sessions', () => {
     initialized = false
   }
 
-  return { sessions, logs, clearVersion, error, initialize, currentSession, start, stop, reload, clear, forgetProject, clearError, dispose }
+  return { sessions, logs, clearVersion, error, initialize, currentSession, start, openTerminal, writeTerminal, resizeTerminal, stop, reload, clear, forgetProject, clearError, dispose }
 })

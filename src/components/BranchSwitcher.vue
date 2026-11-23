@@ -6,7 +6,8 @@ import type { GitBranchInfo } from '@/types/git'
 
 const props = defineProps<{ projectId: string; busy: boolean }>()
 const isOpen = shallowRef(false)
-const isLoading = shallowRef(true)
+const isLoading = shallowRef(false)
+const isCurrentLoading = shallowRef(true)
 const isSwitching = shallowRef(false)
 const searchQuery = shallowRef('')
 const error = shallowRef('')
@@ -19,11 +20,29 @@ const filteredBranches = computed(() => {
 })
 const currentLabel = computed(() => {
   if (branchInfo.value.currentBranch) return branchInfo.value.currentBranch
-  if (isLoading.value) return '读取中…'
+  if (isCurrentLoading.value) return '读取中…'
   if (error.value) return 'Git 不可用'
   return 'HEAD 分离状态'
 })
 let requestVersion = 0
+let currentRequestVersion = 0
+
+async function refreshCurrentBranch() {
+  const version = ++currentRequestVersion
+  const projectId = props.projectId
+  isCurrentLoading.value = true
+  error.value = ''
+  try {
+    const currentBranch = await nimboApi.getCurrentBranch(projectId)
+    if (version !== currentRequestVersion) return
+    branchInfo.value = { ...branchInfo.value, currentBranch }
+  } catch (cause) {
+    if (version !== currentRequestVersion) return
+    error.value = cause instanceof Error ? cause.message : String(cause)
+  } finally {
+    if (version === currentRequestVersion) isCurrentLoading.value = false
+  }
+}
 
 async function refreshBranches() {
   const version = ++requestVersion
@@ -33,7 +52,9 @@ async function refreshBranches() {
   try {
     const result = await nimboApi.listProjectBranches(projectId)
     if (version !== requestVersion) return
+    currentRequestVersion += 1
     branchInfo.value = result
+    isCurrentLoading.value = false
   } catch (cause) {
     if (version !== requestVersion) return
     error.value = cause instanceof Error ? cause.message : String(cause)
@@ -43,6 +64,7 @@ async function refreshBranches() {
 }
 
 function toggleOpen() {
+  if (!isOpen.value) isLoading.value = true
   isOpen.value = !isOpen.value
   if (!isOpen.value) searchQuery.value = ''
 }
@@ -53,6 +75,8 @@ async function switchBranch(branchName: string) {
   error.value = ''
   try {
     branchInfo.value = await nimboApi.switchProjectBranch(props.projectId, branchName)
+    currentRequestVersion += 1
+    isCurrentLoading.value = false
     searchQuery.value = ''
     isOpen.value = false
   } catch (cause) {
@@ -75,20 +99,23 @@ watch(isOpen, (open) => {
 })
 
 watch(() => props.projectId, () => {
+  requestVersion += 1
+  isLoading.value = false
   branchInfo.value = { currentBranch: null, localBranches: [], worktreeBranches: [] }
   searchQuery.value = ''
   error.value = ''
-  void refreshBranches()
+  void refreshCurrentBranch()
 })
 
 onMounted(() => {
-  void refreshBranches()
+  void refreshCurrentBranch()
   document.addEventListener('pointerdown', closeOnOutsidePointer)
   document.addEventListener('keydown', closeOnEscape)
 })
 
 onBeforeUnmount(() => {
   requestVersion += 1
+  currentRequestVersion += 1
   document.removeEventListener('pointerdown', closeOnOutsidePointer)
   document.removeEventListener('keydown', closeOnEscape)
 })

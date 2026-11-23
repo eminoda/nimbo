@@ -8,7 +8,7 @@ use crate::{
     process::{self, AppState},
     storage,
 };
-use std::path::PathBuf;
+use std::{collections::HashSet, path::PathBuf};
 use tauri::{AppHandle, State};
 
 fn package_manager(
@@ -149,6 +149,15 @@ pub fn list_project_branches(
 }
 
 #[tauri::command]
+pub fn get_current_branch(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<Option<String>, String> {
+    let path = project_path(&state, &project_id)?;
+    git::current_branch(&path)
+}
+
+#[tauri::command]
 pub fn list_installed_editors() -> Result<Vec<InstalledEditor>, String> {
     editors::list_installed()
 }
@@ -210,7 +219,7 @@ pub fn save_project(
     if !std::path::Path::new(&project.path).is_dir() {
         return Err("所选项目目录不存在".into());
     }
-    let mut sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
+    let sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
     if sessions.values().any(|managed| {
         managed.session.project_id == project.id
             && matches!(
@@ -225,6 +234,15 @@ pub fn save_project(
         return Err("项目仍有运行中的命令，请先停止后再删除".into());
     }
     let mut settings = state.settings.lock().map_err(|_| "配置不可用")?;
+    let previous_name = settings
+        .projects
+        .iter()
+        .find(|item| item.id == project.id)
+        .map(|item| item.name.as_str());
+    let new_name_length = project.name.trim().chars().count();
+    if previous_name != Some(project.name.as_str()) && !(1..=4).contains(&new_name_length) {
+        return Err("项目名称需为 1–4 个字符".into());
+    }
     let mut next = settings.clone();
     if let Some(existing) = next.projects.iter_mut().find(|item| item.id == project.id) {
         *existing = project.clone();
@@ -252,13 +270,9 @@ pub fn save_project(
     }
     storage::save(&app, &next)?;
     *settings = next;
-    sessions.retain(|_, managed| {
-        managed.session.project_id != project.id
-            || project
-                .commands
-                .iter()
-                .any(|command| command.id == managed.session.command_id)
-    });
+    drop(settings);
+    drop(sessions);
+    process::close_removed_command_sessions(&state, &project);
     Ok(())
 }
 
@@ -268,7 +282,7 @@ pub fn delete_project(
     state: State<'_, AppState>,
     project_id: String,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
+    let sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
     if sessions.values().any(|managed| {
         managed.session.project_id == project_id
             && matches!(
@@ -287,7 +301,9 @@ pub fn delete_project(
             next.selected_project_id = next.project_order.first().cloned();
         }
     })?;
-    sessions.retain(|_, managed| managed.session.project_id != project_id);
+    drop(settings);
+    drop(sessions);
+    process::close_project_sessions(&state, &project_id);
     Ok(())
 }
 
@@ -307,6 +323,27 @@ pub fn select_project(
     }
     persist_settings(&app, &mut settings, |next| {
         next.selected_project_id = Some(project_id)
+    })
+}
+
+#[tauri::command]
+pub fn reorder_projects(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    project_order: Vec<String>,
+) -> Result<(), String> {
+    let mut settings = state.settings.lock().map_err(|_| "配置不可用")?;
+    let known_projects = settings
+        .projects
+        .iter()
+        .map(|project| project.id.clone())
+        .collect::<HashSet<_>>();
+    let requested_projects = project_order.iter().cloned().collect::<HashSet<_>>();
+    if project_order.len() != known_projects.len() || requested_projects != known_projects {
+        return Err("项目顺序无效，请刷新后重试".into());
+    }
+    persist_settings(&app, &mut settings, |next| {
+        next.project_order = project_order
     })
 }
 
@@ -383,7 +420,43 @@ pub fn start_command(
         let settings = state.settings.lock().map_err(|_| "配置不可用")?;
         find_project_command(&settings, &project_id, &command_id)?
     };
-    process::start(app, &state, project, command, None)
+    let session = process::open(app.clone(), &state, project, command.clone())?;
+    process::start_command(&app, &state, &session.session_id, &command)?;
+    Ok(session)
+}
+
+#[tauri::command]
+pub fn open_terminal(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    project_id: String,
+    command_id: String,
+) -> Result<TerminalSession, String> {
+    let (project, command) = {
+        let settings = state.settings.lock().map_err(|_| "配置不可用")?;
+        find_project_command(&settings, &project_id, &command_id)?
+    };
+    process::open(app, &state, project, command)
+}
+
+#[tauri::command]
+pub fn write_terminal(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    session_id: String,
+    data: Vec<u8>,
+) -> Result<(), String> {
+    process::write(&app, &state, &session_id, &data)
+}
+
+#[tauri::command]
+pub fn resize_terminal(
+    state: State<'_, AppState>,
+    session_id: String,
+    rows: u16,
+    cols: u16,
+) -> Result<(), String> {
+    process::resize(&state, &session_id, rows, cols)
 }
 
 #[tauri::command]
@@ -411,13 +484,12 @@ pub async fn reload_session(
     let Some(current) = current else {
         return Err("找不到该会话".into());
     };
-    let (project, command) = {
+    let (_, command) = {
         let settings = state.settings.lock().map_err(|_| "配置不可用")?;
         find_project_command(&settings, &current.project_id, &current.command_id)?
     };
-    let stopped = process::stop(&app, &state, &session_id).await?;
-    tokio::time::timeout(std::time::Duration::from_secs(8), stopped.notified())
-        .await
-        .map_err(|_| "旧进程未能在 8 秒内退出，已取消 Reload".to_string())?;
-    process::start(app, &state, project, command, Some(session_id))
+    process::restart_command(app, &state, &session_id, &command).await?;
+    let mut restarted = current;
+    restarted.status = SessionStatus::Running;
+    Ok(restarted)
 }

@@ -6,13 +6,17 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import type { LogChunk } from '@/types/session'
 
-const props = defineProps<{ sessionId?: string; chunks: LogChunk[]; clearVersion: number; running: boolean }>()
-const emit = defineEmits<{ interrupt: [] }>()
+const props = defineProps<{ sessionId?: string; chunks: LogChunk[]; clearVersion: number }>()
+const emit = defineEmits<{
+  input: [data: string]
+  resize: [rows: number, cols: number]
+}>()
 const terminalHost = shallowRef<HTMLDivElement | null>(null)
 let terminal: Terminal | undefined
 let fitAddon: FitAddon | undefined
 let resizeObserver: ResizeObserver | undefined
 let lastSequence = 0
+let lastResizedSession = ''
 
 function writeChunks(chunks: LogChunk[]) {
   if (!terminal) return
@@ -21,42 +25,55 @@ function writeChunks(chunks: LogChunk[]) {
     terminal.reset()
     lastSequence = 0
     for (const chunk of chunks) {
-      terminal.write(chunk.chunk)
+      terminal.write(Uint8Array.from(chunk.chunk))
       lastSequence = chunk.sequence
     }
     return
   }
   for (const chunk of missing) {
-    terminal.write(chunk.chunk)
+    terminal.write(Uint8Array.from(chunk.chunk))
     lastSequence = chunk.sequence
+  }
+}
+
+function fitTerminal() {
+  if (!fitAddon || !terminal) return
+  fitAddon.fit()
+  if (props.sessionId) {
+    emit('resize', terminal.rows, terminal.cols)
+    lastResizedSession = props.sessionId
   }
 }
 
 watch(() => props.chunks, writeChunks)
 watch(() => props.clearVersion, () => {
-  if (!terminal) return
-  terminal.clear()
+  terminal?.clear()
   lastSequence = 0
 })
 watch(() => props.sessionId, () => {
   if (!terminal) return
   terminal.reset()
   lastSequence = 0
+  lastResizedSession = ''
   writeChunks(props.chunks)
+  requestAnimationFrame(() => {
+    fitTerminal()
+    terminal?.focus()
+  })
 })
 
 onMounted(() => {
   if (!terminalHost.value) return
   terminal = new Terminal({
     allowTransparency: false,
-    convertEol: true,
-    cursorBlink: false,
+    convertEol: false,
+    cursorBlink: true,
     cursorStyle: 'bar',
-    disableStdin: true,
-    fontFamily: 'Cascadia Mono, Consolas, "Courier New", monospace',
+    disableStdin: false,
+    fontFamily: 'Cascadia Code, Consolas, "Courier New", monospace',
     fontSize: 14,
     lineHeight: 1.25,
-    scrollback: 2_000,
+    scrollback: 10_000,
     theme: {
       background: '#11151b', foreground: '#c5ceda', cursor: '#69d9b0',
       selectionBackground: '#33465b', black: '#11151b', red: '#f17d84',
@@ -71,24 +88,21 @@ onMounted(() => {
   terminal.loadAddon(new WebLinksAddon((_event, uri) => { void openUrl(uri).catch(() => undefined) }))
   terminal.open(terminalHost.value)
   fitAddon.fit()
+  terminal.focus()
+  terminal.onData((data) => emit('input', data))
+  terminal.onResize(({ rows, cols }) => {
+    if (props.sessionId && props.sessionId === lastResizedSession) emit('resize', rows, cols)
+  })
   terminal.attachCustomKeyEventHandler((event) => {
-    if (event.type === 'keydown' && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
-      if (terminal?.hasSelection()) {
-        void navigator.clipboard?.writeText(terminal.getSelection()).catch(() => undefined)
-        return false
-      }
-      if (props.running) {
-        emit('interrupt')
-        return false
-      }
+    if (event.type === 'keydown' && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c' && terminal?.hasSelection()) {
+      void navigator.clipboard?.writeText(terminal.getSelection()).catch(() => undefined)
+      return false
     }
     return true
   })
-  resizeObserver = new ResizeObserver(() => fitAddon?.fit())
+  resizeObserver = new ResizeObserver(fitTerminal)
   resizeObserver.observe(terminalHost.value)
-  if (props.sessionId) {
-    writeChunks(props.chunks)
-  }
+  if (props.sessionId) writeChunks(props.chunks)
 })
 
 onBeforeUnmount(() => {
@@ -100,8 +114,5 @@ onBeforeUnmount(() => {
 <template>
   <div class="terminal-pane">
     <div ref="terminalHost" class="terminal-host" />
-    <p v-if="chunks.length === 0" class="terminal-empty">
-      {{ running ? '等待命令输出…' : '点击上方「启动」查看命令输出' }}
-    </p>
   </div>
 </template>

@@ -85,6 +85,7 @@ impl Default for NimboSettings {
 #[serde(rename_all = "lowercase")]
 pub enum SessionStatus {
     Stopped,
+    Ready,
     Starting,
     Running,
     Stopping,
@@ -110,7 +111,7 @@ pub struct TerminalSession {
 pub struct SessionOutputEvent {
     pub session_id: String,
     pub stream: String,
-    pub chunk: String,
+    pub chunk: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Serialize)]

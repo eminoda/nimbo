@@ -5,12 +5,18 @@ import { nimboApi } from '@/services/tauri'
 import codexIcon from '@/assets/editors/codex.png'
 import cursorIcon from '@/assets/editors/cursor.png'
 import vscodeIcon from '@/assets/editors/vscode.png'
+import { useProjectReorder } from '@/composables/useProjectReorder'
 import type { EditorId, InstalledEditor } from '@/types/editor'
 import type { ProjectBookmark } from '@/types/project'
 
-defineProps<{ projects: ProjectBookmark[]; selectedProjectId?: string; runningProjectIds: string[] }>()
+const { projects, selectedProjectId, runningProjectIds } = defineProps<{
+  projects: ProjectBookmark[]
+  selectedProjectId?: string
+  runningProjectIds: string[]
+}>()
 const emit = defineEmits<{
   compact: []
+  reorder: [projectOrder: string[]]
   select: [projectId: string]
   editProject: [projectId: string]
   deleteProject: [projectId: string]
@@ -18,6 +24,9 @@ const emit = defineEmits<{
   addProject: []
   openSettings: []
 }>()
+
+const { draggingProjectId, dragOverProjectId, dropPosition, startDrag, moveDrag, endDrag, cancelDrag, handleClick } =
+  useProjectReorder(() => projects, (projectOrder) => emit('reorder', projectOrder))
 
 const contextMenu = shallowRef<{ projectId: string; x: number; y: number }>()
 const contextMenuElement = shallowRef<HTMLDivElement | null>(null)
@@ -39,6 +48,10 @@ const editorIcons: Record<EditorId, string> = {
 const contextMenuWidth = 172
 const contextMenuHeight = 160
 const ideSubmenuWidth = 166
+
+function selectProject(event: MouseEvent, projectId: string) {
+  if (!handleClick(event)) emit('select', projectId)
+}
 
 function closeContextMenu() {
   contextMenuGeneration += 1
@@ -129,17 +142,29 @@ onBeforeUnmount(() => {
         v-for="(project, index) in projects"
         :key="project.id"
         class="project-tile"
-        :class="{ active: project.id === selectedProjectId }"
+        :class="{
+          active: project.id === selectedProjectId,
+          dragging: project.id === draggingProjectId,
+          'drop-target': project.id === dragOverProjectId && project.id !== draggingProjectId,
+          'drop-before': project.id === dropPosition?.projectId && dropPosition?.side === 'before',
+          'drop-after': project.id === dropPosition?.projectId && dropPosition?.side === 'after',
+          reorderable: projects.length > 1,
+        }"
         :style="{ '--tile-color': project.iconColor || `hsl(${(index * 51 + 218) % 360} 38% 59%)` }"
         type="button"
+        :data-project-id="project.id"
         :aria-label="project.name"
         :aria-current="project.id === selectedProjectId ? 'page' : undefined"
         :title="`${project.name} · ${project.path}`"
-        @click="emit('select', project.id)"
+        @pointerdown="startDrag($event, project.id)"
+        @pointermove="moveDrag"
+        @pointerup="endDrag"
+        @pointercancel="cancelDrag"
+        @click="selectProject($event, project.id)"
         @contextmenu.prevent.stop="openContextMenu($event, project.id)"
       >
         <img v-if="project.iconDataUrl" class="project-tile-image" :src="project.iconDataUrl" alt="" />
-        <span v-else>{{ project.initials || project.name.slice(0, 2).toUpperCase() }}</span>
+        <span v-else>{{ Array.from(project.initials || project.name).slice(0, 4).join('').toUpperCase() }}</span>
         <span v-if="runningProjectIds.includes(project.id)" class="project-dot" />
       </button>
     </nav>

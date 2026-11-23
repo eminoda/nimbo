@@ -14,6 +14,12 @@ const iconColor = shallowRef(props.project?.iconColor ?? '')
 const error = shallowRef('')
 const imageInput = shallowRef<HTMLInputElement | null>(null)
 const title = computed(() => props.project ? '编辑项目' : '添加项目')
+const nameMaxLength = computed(() => {
+  const existingName = props.project?.name
+  return existingName && name.value.trim() === existingName
+    ? Math.max(8, existingName.length)
+    : 8
+})
 const maxImageSize = 2 * 1024 * 1024
 const iconColors = [
   '#e15b64', '#f16d4b', '#ec8b2c', '#c99b27', '#91a83a', '#54a45c',
@@ -31,6 +37,18 @@ async function chooseDirectory() {
 
 function chooseImage() {
   imageInput.value?.click()
+}
+
+function handleNameInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const keepsLegacyName = props.project?.name === input.value.trim()
+  const existingNameIsLong = props.project && Array.from(props.project.name.trim()).length > 4
+  if (!keepsLegacyName && (!existingNameIsLong || Array.from(input.value.trim()).length <= 4)) {
+    const characters = Array.from(input.value)
+    if (characters.length > 4) input.value = characters.slice(0, 4).join('')
+  }
+  name.value = input.value
+  error.value = ''
 }
 
 function loadImage(event: Event) {
@@ -61,13 +79,19 @@ function loadImage(event: Event) {
 }
 
 function save() {
-  if (!name.value.trim()) { error.value = '请输入项目名称'; return }
+  const normalizedName = name.value.trim()
+  if (!normalizedName) { error.value = '请输入项目名称'; return }
+  const keepsExistingName = props.project?.name === normalizedName
+  if (!keepsExistingName && Array.from(normalizedName).length > 4) {
+    error.value = '项目名称需为 1–4 个字符'
+    return
+  }
   if (!path.value.trim()) { error.value = '请选择项目目录'; return }
   emit('save', {
     id: props.project?.id ?? crypto.randomUUID(),
-    name: name.value.trim(),
+    name: normalizedName,
     path: path.value,
-    initials: initials.value.trim().slice(0, 3).toUpperCase() || undefined,
+    initials: Array.from(initials.value.trim()).slice(0, 4).join('').toUpperCase() || undefined,
     iconPath: props.project?.iconPath,
     iconDataUrl: iconDataUrl.value || undefined,
     iconColor: iconColor.value || undefined,
@@ -80,16 +104,16 @@ function save() {
   <div class="dialog-backdrop" @click.self="emit('cancel')">
     <form class="dialog-card" role="dialog" aria-modal="true" :aria-label="title" @submit.prevent="save">
       <header class="dialog-header"><div><p class="eyebrow">PROJECT</p><h2>{{ title }}</h2></div><button class="icon-button" type="button" aria-label="关闭" @click="emit('cancel')"><X :size="19" /></button></header>
-      <label class="field-label">项目名称<input v-model="name" autofocus maxlength="64" placeholder="例如 Admin Web" /></label>
+      <label class="field-label">项目名称 <span class="field-note">新名称需为 1–4 个字符</span><input :value="name" autofocus :maxlength="nameMaxLength" placeholder="例如 Nimbo" @input="handleNameInput" /></label>
       <label class="field-label">项目目录<div class="field-with-button"><input v-model="path" placeholder="选择一个本地项目文件夹" /><button class="secondary-button folder-button" type="button" @click="chooseDirectory"><FolderOpen :size="16" />选择目录</button></div></label>
-      <label class="field-label">侧栏缩写 <span class="field-note">可选，最多 3 个字符</span><input v-model="initials" maxlength="3" placeholder="由项目名称自动生成" /></label>
+      <label class="field-label">侧栏缩写 <span class="field-note">可选，最多 4 个字符</span><input v-model="initials" maxlength="4" placeholder="由项目名称自动生成" /></label>
       <div class="field-label project-icon-field">
         <span>项目图片 <span class="field-note">可选，PNG / JPG / WebP，最大 2 MB</span></span>
         <input ref="imageInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" @change="loadImage" />
         <div class="project-icon-picker">
           <div class="project-icon-preview" :style="{ backgroundColor: iconColor || '#536d9e' }" aria-label="项目图标预览">
             <img v-if="iconDataUrl" :src="iconDataUrl" alt="项目图片预览" />
-            <span v-else>{{ initials.trim().slice(0, 3).toUpperCase() || name.trim().slice(0, 2).toUpperCase() || '项目' }}</span>
+            <span v-else>{{ Array.from(initials.trim()).slice(0, 4).join('').toUpperCase() || Array.from(name.trim()).slice(0, 4).join('').toUpperCase() || '项目' }}</span>
           </div>
           <button class="secondary-button" type="button" @click="chooseImage"><ImagePlus :size="16" />选择图片</button>
           <button v-if="iconDataUrl" class="secondary-button remove-icon-button" type="button" @click="iconDataUrl = ''">移除图片</button>

@@ -11,6 +11,8 @@ export const nimboApi = {
     invoke<PackageScripts>('list_package_scripts', { projectId }),
   listProjectBranches: (projectId: string) =>
     invoke<GitBranchInfo>('list_project_branches', { projectId }),
+  getCurrentBranch: (projectId: string) =>
+    invoke<string | null>('get_current_branch', { projectId }),
   switchProjectBranch: (projectId: string, branchName: string) =>
     invoke<GitBranchInfo>('switch_project_branch', { projectId, branchName }),
   listInstalledEditors: () => invoke<InstalledEditor[]>('list_installed_editors'),
@@ -19,12 +21,19 @@ export const nimboApi = {
   saveProject: (project: ProjectBookmark) => invoke<void>('save_project', { project }),
   deleteProject: (projectId: string) => invoke<void>('delete_project', { projectId }),
   selectProject: (projectId: string) => invoke<void>('select_project', { projectId }),
+  reorderProjects: (projectOrder: string[]) => invoke<void>('reorder_projects', { projectOrder }),
   selectCommand: (projectId: string, commandId: string) =>
     invoke<void>('select_command', { projectId, commandId }),
   setCloseToTray: (enabled: boolean) => invoke<void>('set_close_to_tray', { enabled }),
   listSessions: () => invoke<TerminalSession[]>('list_sessions'),
   startCommand: (projectId: string, commandId: string) =>
     invoke<TerminalSession>('start_command', { projectId, commandId }),
+  openTerminal: (projectId: string, commandId: string) =>
+    invoke<TerminalSession>('open_terminal', { projectId, commandId }),
+  writeTerminal: (sessionId: string, data: number[]) =>
+    invoke<void>('write_terminal', { sessionId, data }),
+  resizeTerminal: (sessionId: string, rows: number, cols: number) =>
+    invoke<void>('resize_terminal', { sessionId, rows, cols }),
   stopSession: (sessionId: string) => invoke<void>('stop_session', { sessionId }),
   reloadSession: (sessionId: string) =>
     invoke<TerminalSession>('reload_session', { sessionId }),

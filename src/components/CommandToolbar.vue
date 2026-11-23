@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleAlert, CircleCheck, CirclePlay, CircleStop, Eraser, LoaderCircle, RotateCw, Square } from '@lucide/vue'
+import { CircleAlert, CircleCheck, CirclePlay, CircleStop, Eraser, LoaderCircle, RotateCw, Square, TerminalSquare } from '@lucide/vue'
 import type { SessionStatus } from '@/types/session'
 
 defineProps<{ status: SessionStatus; commandName?: string }>()
@@ -27,10 +27,11 @@ const emit = defineEmits<{ start: []; stop: []; reload: []; clear: [] }>()
     </div>
     <div class="session-state" :class="`state-${status}`" role="status">
       <CircleCheck v-if="status === 'running'" class="session-state-icon" :size="16" />
+      <TerminalSquare v-else-if="status === 'ready'" class="session-state-icon" :size="16" />
       <LoaderCircle v-else-if="status === 'starting' || status === 'stopping'" class="session-state-icon spinning" :size="16" />
       <CircleAlert v-else-if="status === 'failed'" class="session-state-icon" :size="16" />
       <CircleStop v-else class="session-state-icon" :size="16" />
-      <span>{{ status === 'running' ? 'Running' : status === 'starting' ? 'Starting' : status === 'stopping' ? 'Stopping' : status === 'failed' ? 'Failed' : status === 'exited' ? 'Exited' : 'Stopped' }}</span>
+      <span>{{ status === 'running' ? 'Running' : status === 'ready' ? 'Ready' : status === 'starting' ? 'Starting' : status === 'stopping' ? 'Stopping' : status === 'failed' ? 'Failed' : status === 'exited' ? 'Exited' : 'Stopped' }}</span>
     </div>
   </div>
 </template>

@@ -68,6 +68,17 @@ export const useProjectsStore = defineStore('projects', () => {
     settings.value.selectedProjectId = projectId
   }
 
+  async function reorderProjects(projectOrder: string[]) {
+    const previousOrder = settings.value.projectOrder
+    settings.value.projectOrder = projectOrder
+    try {
+      await nimboApi.reorderProjects(projectOrder)
+    } catch (error) {
+      settings.value.projectOrder = previousOrder
+      throw error
+    }
+  }
+
   async function selectCommand(projectId: string, commandId: string) {
     await nimboApi.selectCommand(projectId, commandId)
     settings.value.selectedCommandByProject[projectId] = commandId
@@ -80,6 +91,6 @@ export const useProjectsStore = defineStore('projects', () => {
 
   return {
     settings, projects, selectedProject, selectedCommandId, initialized,
-    initialize, saveProject, deleteProject, selectProject, selectCommand, setCloseToTray,
+    initialize, saveProject, deleteProject, selectProject, reorderProjects, selectCommand, setCloseToTray,
   }
 })

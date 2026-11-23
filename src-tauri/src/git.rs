@@ -10,7 +10,14 @@ pub struct GitBranchInfo {
 }
 
 fn run_git(project_path: &Path, args: &[&str]) -> Result<String, String> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let output = command
         .arg("-C")
         .arg(project_path)
         .args(args)
@@ -32,6 +39,14 @@ fn run_git(project_path: &Path, args: &[&str]) -> Result<String, String> {
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+pub fn current_branch(project_path: &Path) -> Result<Option<String>, String> {
+    let branch = run_git(project_path, &["branch", "--show-current"])?;
+    Ok(match branch.trim() {
+        "" => None,
+        name => Some(name.to_owned()),
+    })
 }
 
 pub fn branch_info(project_path: &Path) -> Result<GitBranchInfo, String> {
