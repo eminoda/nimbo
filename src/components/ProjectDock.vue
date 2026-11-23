@@ -214,7 +214,6 @@ onBeforeUnmount(() => {
         <Trash2 :size="15" />删除项目
       </button>
     </div>
-    <div class="dock-spacer" />
     <button class="dock-action" type="button" title="添加项目" aria-label="添加项目" @click="emit('addProject')">
       <FolderPlus :size="18" />
     </button>

@@ -106,7 +106,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .project-context-menu .editor-menu-error { color: #ff9ca4; }
 .project-context-menu .editor-menu-refresh { height: 30px; color: #9ab7e7; font-size: 11px; }
 .project-context-menu .editor-menu-refresh:disabled { opacity: .55; cursor: wait; }
-.dock-spacer { flex: 1; min-height: 20px; }
 .dock-action { width: 36px; height: 36px; }
 .project-dock .dock-collapse { flex: 0 0 36px; }
 
