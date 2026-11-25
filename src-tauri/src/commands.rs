@@ -220,6 +220,22 @@ pub fn save_project(
         return Err("所选项目目录不存在".into());
     }
     let sessions = state.sessions.lock().map_err(|_| "会话状态不可用")?;
+    let mut settings = state.settings.lock().map_err(|_| "配置不可用")?;
+    let path_changed = settings
+        .projects
+        .iter()
+        .find(|existing| existing.id == project.id)
+        .is_some_and(|existing| existing.path != project.path);
+    let has_running_sessions = sessions.values().any(|managed| {
+        managed.session.project_id == project.id
+            && matches!(
+                managed.session.status,
+                SessionStatus::Starting | SessionStatus::Running | SessionStatus::Stopping
+            )
+    });
+    if path_changed && has_running_sessions {
+        return Err("请先停止该项目中的运行命令，再修改项目目录".into());
+    }
     if sessions.values().any(|managed| {
         managed.session.project_id == project.id
             && matches!(
@@ -233,7 +249,6 @@ pub fn save_project(
     }) {
         return Err("项目仍有运行中的命令，请先停止后再删除".into());
     }
-    let mut settings = state.settings.lock().map_err(|_| "配置不可用")?;
     let previous_name = settings
         .projects
         .iter()
@@ -272,7 +287,11 @@ pub fn save_project(
     *settings = next;
     drop(settings);
     drop(sessions);
-    process::close_removed_command_sessions(&state, &project);
+    if path_changed {
+        process::close_project_sessions(&state, &project.id);
+    } else {
+        process::close_removed_command_sessions(&state, &project);
+    }
     Ok(())
 }
 

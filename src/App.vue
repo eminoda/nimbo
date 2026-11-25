@@ -37,6 +37,7 @@ const editingCommand = shallowRef<CommandPreset>()
 const settingsOpen = shallowRef(false)
 const settingsFilePath = shallowRef('')
 const toast = shallowRef('')
+const reloadingProjectId = shallowRef<string>()
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const project = computed(() => projectsStore.selectedProject)
@@ -85,6 +86,7 @@ onMounted(async () => {
 })
 
 watch(() => [project.value?.id, command.value?.id], () => {
+  if (project.value?.id === reloadingProjectId.value) return
   void ensureTerminal().catch((error) => showToast(error instanceof Error ? error.message : String(error)))
 })
 
@@ -101,9 +103,20 @@ function openProjectEditor(target?: ProjectBookmark) {
 
 async function saveProject(value: ProjectBookmark) {
   await run(async () => {
-    await projectsStore.saveProject(value)
-    projectDialogOpen.value = false
-    editingProject.value = undefined
+    const previousProject = projectsStore.projects.find((item) => item.id === value.id)
+    const pathChanged = previousProject !== undefined && previousProject.path !== value.path
+    if (pathChanged) reloadingProjectId.value = value.id
+    try {
+      await projectsStore.saveProject(value)
+      if (pathChanged) {
+        sessionsStore.forgetProject(value.id)
+        await ensureTerminal()
+      }
+      projectDialogOpen.value = false
+      editingProject.value = undefined
+    } finally {
+      if (reloadingProjectId.value === value.id) reloadingProjectId.value = undefined
+    }
   })
 }
 
